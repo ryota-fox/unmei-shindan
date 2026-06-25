@@ -1,0 +1,1835 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>運命職業診断 — 人生攻略ギルド</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+:root {
+  --gold:#C9A84C;--gold-light:#F0D080;--gold-dim:#7A6230;
+  --dark:#0A0A0F;--dark2:#12121A;--dark3:#1A1A26;--dark4:#242435;
+  --border:rgba(201,168,76,0.25);--border-bright:rgba(201,168,76,0.6);
+  --text:#E8E0D0;--text-muted:#8A8070;
+  --success:#1D9E75;--danger:#C0392B;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--dark);color:var(--text);font-family:'Noto Sans JP',sans-serif;min-height:100vh;overflow-x:hidden}
+#stars{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 20% 50%,#1a1040 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,#0a1a2e 0%,transparent 50%),var(--dark)}
+#stars::before{content:'';position:absolute;inset:0;background-image:radial-gradient(1px 1px at 10% 15%,rgba(255,255,200,.6) 0%,transparent 100%),radial-gradient(1px 1px at 25% 40%,rgba(255,255,200,.4) 0%,transparent 100%),radial-gradient(1px 1px at 40% 10%,rgba(255,255,200,.5) 0%,transparent 100%),radial-gradient(1px 1px at 55% 65%,rgba(255,255,200,.3) 0%,transparent 100%),radial-gradient(1px 1px at 70% 30%,rgba(255,255,200,.6) 0%,transparent 100%),radial-gradient(1px 1px at 85% 75%,rgba(255,255,200,.4) 0%,transparent 100%),radial-gradient(1px 1px at 15% 80%,rgba(255,255,200,.5) 0%,transparent 100%),radial-gradient(1px 1px at 60% 90%,rgba(255,255,200,.3) 0%,transparent 100%)}
+
+.screen{position:relative;z-index:1;min-height:100vh;display:none;flex-direction:column;align-items:center;justify-content:flex-start;padding:2rem 1rem}
+.screen.active{display:flex}
+
+/* TOP */
+.logo-crest{width:90px;height:90px;border:2px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;margin-bottom:1.5rem;box-shadow:0 0 30px rgba(201,168,76,.2)}
+.service-title{font-family:'Noto Serif JP',serif;font-size:clamp(1.6rem,5vw,2.4rem);font-weight:900;color:var(--gold);text-align:center;letter-spacing:.05em;margin-bottom:.5rem}
+.catchcopy{font-size:clamp(.9rem,3vw,1.1rem);color:var(--text-muted);text-align:center;margin-bottom:2.5rem;letter-spacing:.1em}
+.divider{width:200px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:1.5rem auto}
+.btn-primary{display:inline-block;background:linear-gradient(135deg,var(--gold-dim),var(--gold));color:var(--dark);border:none;padding:1rem 3rem;font-family:'Noto Serif JP',serif;font-size:1.1rem;font-weight:700;cursor:pointer;clip-path:polygon(12px 0%,100% 0%,calc(100% - 12px) 100%,0% 100%);transition:transform .15s,box-shadow .15s;letter-spacing:.1em}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(201,168,76,.3)}
+.type-preview{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;max-width:500px;margin:2rem 0}
+.type-badge{background:var(--dark3);border:1px solid var(--border);padding:.4rem .5rem;font-size:.7rem;text-align:center;color:var(--text-muted);clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%)}
+.type-badge.highlight{border-color:var(--gold-dim);color:var(--gold)}
+
+/* QUIZ */
+.progress-bar-wrap{width:100%;max-width:600px;background:var(--dark3);height:4px;margin-bottom:.6rem;border-radius:2px;overflow:hidden}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold));transition:width .4s ease}
+.progress-text{font-size:.8rem;color:var(--text-muted);margin-bottom:2rem;letter-spacing:.1em}
+.question-card{max-width:600px;width:100%;background:var(--dark2);border:1px solid var(--border);padding:2rem;margin-bottom:1.5rem;position:relative}
+.question-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold-dim),var(--gold),var(--gold-dim))}
+.q-number{font-size:.75rem;color:var(--gold-dim);letter-spacing:.15em;margin-bottom:1rem}
+.q-text{font-family:'Noto Serif JP',serif;font-size:1.1rem;font-weight:700;line-height:1.7;color:var(--text)}
+.options-grid{display:flex;flex-direction:column;gap:.7rem;max-width:600px;width:100%}
+.option-btn{background:var(--dark3);border:1px solid var(--border);color:var(--text);padding:1rem 1.2rem;text-align:left;cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-size:.95rem;transition:all .2s;display:flex;align-items:flex-start;gap:.8rem;line-height:1.5}
+.option-btn:hover{border-color:var(--gold);background:rgba(201,168,76,.08)}
+.option-btn.selected{border-color:var(--gold);background:rgba(201,168,76,.15);color:var(--gold-light)}
+.option-key{flex-shrink:0;width:24px;height:24px;background:var(--dark4);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:var(--gold-dim)}
+.option-btn.selected .option-key{background:var(--gold-dim);color:var(--dark);border-color:var(--gold)}
+.nav-row{display:flex;gap:1rem;margin-top:1.5rem;max-width:600px;width:100%}
+.btn-secondary{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:.7rem 1.5rem;font-family:'Noto Sans JP',sans-serif;font-size:.9rem;cursor:pointer;transition:all .2s}
+.btn-secondary:hover{border-color:var(--gold-dim);color:var(--text)}
+.btn-next{background:var(--dark3);border:1px solid var(--border-bright);color:var(--gold);padding:.7rem 2rem;font-family:'Noto Sans JP',sans-serif;font-size:.9rem;cursor:pointer;transition:all .2s;margin-left:auto}
+.btn-next:hover{background:rgba(201,168,76,.1)}
+.btn-next:disabled{opacity:.3;cursor:not-allowed}
+
+/* LOADING */
+#screen-loading{justify-content:center;text-align:center}
+.loading-crest{width:80px;height:80px;border:2px solid var(--gold-dim);border-top-color:var(--gold);border-radius:50%;animation:spin 1.5s linear infinite;margin:0 auto 2rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-family:'Noto Serif JP',serif;font-size:1.1rem;color:var(--gold);letter-spacing:.15em;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
+
+/* RESULT */
+.result-header{text-align:center;margin-bottom:2rem}
+.result-kingdom{font-size:.75rem;letter-spacing:.2em;color:var(--text-muted);margin-bottom:.5rem}
+.result-type-name{font-family:'Noto Serif JP',serif;font-size:clamp(2rem,6vw,3rem);font-weight:900;color:var(--gold);line-height:1.2;margin-bottom:.3rem}
+.result-legend-job{font-size:.85rem;color:var(--gold-dim);letter-spacing:.1em}
+.result-dark-job{font-size:.75rem;color:var(--danger);letter-spacing:.05em;margin-top:.2rem;opacity:.7}
+.result-avatar{width:220px;max-width:70vw;aspect-ratio:307/517;margin:1.2rem auto;display:flex;align-items:center;justify-content:center;font-size:4rem;background:var(--dark3);border:1px solid var(--gold-dim);border-radius:8px;box-shadow:0 0 30px rgba(201,168,76,.15),0 8px 24px rgba(0,0,0,.4);overflow:hidden;position:relative}
+.result-avatar::after{content:'';position:absolute;inset:0;border-radius:8px;box-shadow:inset 0 0 0 1px rgba(201,168,76,.2);pointer-events:none}
+.result-avatar img{width:100%;height:100%;object-fit:cover;border-radius:8px;display:block}
+.result-avatar .avatar-placeholder{font-size:4rem;line-height:1}
+/* タイプコード表示 */
+.result-type-code{font-family:'Noto Serif JP',serif;font-size:1rem;font-weight:700;color:var(--gold-dim);letter-spacing:.3em;margin-bottom:.3rem}
+.result-beast{font-size:.78rem;color:var(--text-muted);letter-spacing:.1em;margin-top:.2rem}
+/* 王国カラーバリアント */
+.kingdom-dominion{--kg-color:#C9A84C;--kg-sub:#7A6230}
+.kingdom-resonance{--kg-color:#5DADE2;--kg-sub:#2E86C1}
+.kingdom-creation{--kg-color:#A569BD;--kg-sub:#6C3483}
+.kingdom-growth{--kg-color:#58D68D;--kg-sub:#1E8449}
+.kingdom-accent{color:var(--kg-color,var(--gold))}
+/* SNSシェアボタン */
+.share-section{max-width:600px;width:100%;margin:.5rem 0 1.5rem}
+/* タイプ解説・覚醒ルート */
+.type-desc-text{font-size:.88rem;color:var(--text-muted);line-height:1.9}
+.awakening-list{display:flex;flex-direction:column;gap:.6rem;margin-top:.3rem}
+.awakening-item{display:flex;gap:.6rem;align-items:flex-start;font-size:.85rem;color:var(--text-muted);line-height:1.7;padding:.7rem .9rem;background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.12)}
+.awakening-num{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--gold-dim);color:var(--dark);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700}
+.awakening-locked{display:flex;flex-direction:column;gap:.5rem;margin-top:.6rem;padding:1rem;background:var(--dark4);border:1px dashed var(--border);text-align:center}
+.awakening-locked p{font-size:.78rem;color:var(--text-muted)}
+.awakening-locked .lock-title{font-family:'Noto Serif JP',serif;color:var(--gold);font-size:.9rem;font-weight:700}
+.compat-comment{display:block;width:100%;font-size:.7rem;color:var(--text-muted);margin-top:.3rem;line-height:1.5;padding-left:calc(24px + .8rem)}
+.share-label{font-size:.7rem;letter-spacing:.2em;color:var(--gold-dim);margin-bottom:.7rem}
+.share-buttons{display:flex;gap:.6rem;flex-wrap:wrap}
+.btn-share{display:flex;align-items:center;gap:.4rem;padding:.5rem 1rem;border:1px solid var(--border);background:var(--dark3);color:var(--text-muted);font-size:.8rem;cursor:pointer;transition:all .2s;font-family:'Noto Sans JP',sans-serif}
+.btn-share:hover{border-color:var(--gold-dim);color:var(--text)}
+.btn-share.twitter:hover{border-color:#1DA1F2;color:#1DA1F2}
+.btn-share.threads:hover{border-color:#E0E0E0;color:#E0E0E0}
+.btn-share.instagram:hover{border-color:#E1306C;color:#E1306C}
+.btn-share.copy-btn:hover{border-color:var(--gold);color:var(--gold)}
+.rank-badge-wrap{display:flex;align-items:center;justify-content:center;gap:1.5rem;margin:1.5rem 0}
+.rank-badge{background:var(--dark3);border:2px solid var(--gold);width:70px;height:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)}
+.rank-letter{font-family:'Noto Serif JP',serif;font-size:1.8rem;font-weight:900;color:var(--gold);line-height:1}
+.rank-title-small{font-size:.55rem;color:var(--gold-dim);letter-spacing:.05em}
+.legend-rate-wrap{text-align:center}
+.legend-rate-label{font-size:.7rem;color:var(--text-muted);letter-spacing:.15em}
+.legend-rate-value{font-family:'Noto Serif JP',serif;font-size:2.5rem;font-weight:900;color:var(--gold)}
+.legend-rate-pct{font-size:1rem}
+.section-card{max-width:600px;width:100%;background:var(--dark2);border:1px solid var(--border);padding:1.5rem;margin-bottom:1.2rem;position:relative}
+.section-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold-dim),var(--gold),var(--gold-dim))}
+.section-label{font-size:.7rem;letter-spacing:.2em;color:var(--gold-dim);margin-bottom:1rem}
+.ability-row{display:flex;align-items:center;gap:.8rem;margin-bottom:.8rem}
+.ability-name{width:55px;font-size:.75rem;color:var(--text-muted);flex-shrink:0}
+.ability-bar-bg{flex:1;height:6px;background:var(--dark4);border-radius:3px;overflow:hidden}
+.ability-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold));border-radius:3px;transition:width 1.2s cubic-bezier(.16,1,.3,1);width:0%}
+.ability-value{width:35px;font-size:.8rem;color:var(--gold);text-align:right;flex-shrink:0}
+.derived-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8rem}
+.derived-item{text-align:center;background:var(--dark3);border:1px solid var(--border);padding:.8rem .5rem}
+.derived-label{font-size:.65rem;color:var(--text-muted);letter-spacing:.1em;margin-bottom:.3rem}
+.derived-value{font-family:'Noto Serif JP',serif;font-size:1.3rem;font-weight:700;color:var(--gold)}
+.compat-list{display:flex;flex-direction:column;gap:.6rem}
+.compat-item{display:flex;align-items:center;gap:.8rem;background:var(--dark3);border:1px solid var(--border);padding:.7rem 1rem;flex-wrap:wrap}
+.compat-rank{width:24px;height:24px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--dark);flex-shrink:0}
+.compat-name{font-size:.9rem;color:var(--text)}
+.compat-reason{font-size:.7rem;color:var(--text-muted);margin-left:auto}
+
+/* ===== CTA SECTION (有料導線) ===== */
+.cta-section{max-width:600px;width:100%;margin:1.5rem 0}
+.cta-eyebrow{text-align:center;font-size:.7rem;letter-spacing:.25em;color:var(--gold-dim);margin-bottom:.8rem}
+.cta-main-card{background:linear-gradient(160deg,#1a1530 0%,var(--dark2) 100%);border:1px solid var(--gold-dim);border-top:2px solid var(--gold);padding:2rem;text-align:center;position:relative;overflow:hidden}
+.cta-main-card::after{content:'';position:absolute;top:-60%;left:-60%;width:220%;height:220%;background:radial-gradient(ellipse at center,rgba(201,168,76,.06) 0%,transparent 55%);pointer-events:none}
+.cta-tagline{font-family:'Noto Serif JP',serif;font-size:1.25rem;font-weight:900;color:var(--text);line-height:1.6;margin-bottom:.5rem}
+.cta-sub{font-size:.82rem;color:var(--text-muted);line-height:1.7;margin-bottom:1.5rem}
+.cta-contents{display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin-bottom:1.5rem;text-align:left}
+.cta-content-item{display:flex;align-items:flex-start;gap:.5rem;font-size:.78rem;color:var(--text-muted);padding:.35rem .5rem;background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.1)}
+.cta-content-item span.icon{color:var(--gold);flex-shrink:0}
+.price-block{margin-bottom:1.5rem}
+.price-regular{font-size:.75rem;color:var(--text-muted);text-decoration:line-through;margin-bottom:.2rem}
+.price-main{font-family:'Noto Serif JP',serif;display:flex;align-items:baseline;justify-content:center;gap:.3rem}
+.price-currency{font-size:1.2rem;color:var(--gold);font-weight:700}
+.price-amount{font-size:3rem;font-weight:900;color:var(--gold);line-height:1}
+.price-unit{font-size:.85rem;color:var(--text-muted)}
+.price-tax{font-size:.7rem;color:var(--text-muted);margin-top:.2rem}
+.sample-link{font-size:.75rem;color:var(--gold-dim);text-decoration:underline;cursor:pointer;margin-bottom:1.2rem;display:block}
+.sample-link:hover{color:var(--gold)}
+.btn-purchase{display:block;width:100%;background:linear-gradient(135deg,#8B6914,var(--gold));color:var(--dark);border:none;padding:1.2rem 2rem;font-family:'Noto Serif JP',serif;font-size:1.05rem;font-weight:700;cursor:pointer;clip-path:polygon(14px 0%,100% 0%,calc(100% - 14px) 100%,0% 100%);letter-spacing:.1em;transition:transform .15s,box-shadow .15s;position:relative;z-index:1}
+.btn-purchase:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(201,168,76,.35)}
+.btn-purchase:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.purchase-note{font-size:.7rem;color:var(--text-muted);margin-top:.8rem;line-height:1.6}
+.security-badges{display:flex;justify-content:center;gap:1rem;margin-top:.8rem}
+.security-badge{font-size:.65rem;color:var(--text-muted);display:flex;align-items:center;gap:.3rem}
+
+/* メール登録バナー */
+.email-banner{max-width:600px;width:100%;background:var(--dark3);border:1px solid var(--border);padding:1.2rem 1.5rem;margin:1rem 0;display:flex;align-items:center;gap:1rem}
+.email-banner-text{flex:1}
+.email-banner-title{font-size:.85rem;font-weight:700;color:var(--text);margin-bottom:.2rem}
+.email-banner-sub{font-size:.72rem;color:var(--text-muted)}
+.email-inline-form{display:flex;gap:.5rem;max-width:600px;width:100%;margin:.5rem 0}
+.email-inline-input{flex:1;background:var(--dark4);border:1px solid var(--border);color:var(--text);padding:.6rem .9rem;font-family:'Noto Sans JP',sans-serif;font-size:.85rem;outline:none;transition:border-color .2s;min-width:0}
+.email-inline-input:focus{border-color:var(--gold)}
+.btn-email-register{background:var(--dark3);border:1px solid var(--border-bright);color:var(--gold);padding:.6rem 1.2rem;font-family:'Noto Sans JP',sans-serif;font-size:.82rem;cursor:pointer;white-space:nowrap;transition:all .2s}
+.btn-email-register:hover{background:rgba(201,168,76,.1)}
+.email-success{font-size:.8rem;color:var(--success);padding:.5rem 0;letter-spacing:.05em}
+
+/* FORM */
+.form-group{margin-bottom:1rem}
+.form-label{display:block;font-size:.8rem;color:var(--text-muted);margin-bottom:.4rem;letter-spacing:.05em}
+.form-input{width:100%;background:var(--dark4);border:1px solid var(--border);color:var(--text);padding:.7rem 1rem;font-family:'Noto Sans JP',sans-serif;font-size:.9rem;outline:none;transition:border-color .2s}
+.form-input:focus{border-color:var(--gold)}
+.form-input[readonly]{opacity:.6;cursor:default}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:1rem}
+.modal-box{background:var(--dark2);border:1px solid var(--gold-dim);padding:2rem;max-width:500px;width:100%;max-height:90vh;overflow-y:auto}
+.modal-title{font-family:'Noto Serif JP',serif;font-size:1.1rem;font-weight:700;color:var(--gold);margin-bottom:1rem;letter-spacing:.05em}
+.modal-hidden{display:none}
+.description-text{font-size:.85rem;color:var(--text-muted);line-height:1.8;margin-bottom:1rem}
+
+/* STRIPE FORM */
+.stripe-section{background:var(--dark3);border:1px solid var(--border);padding:1.2rem;margin-bottom:1rem}
+.stripe-section-label{font-size:.72rem;color:var(--gold-dim);letter-spacing:.15em;margin-bottom:.8rem}
+#card-element{background:var(--dark4);border:1px solid var(--border);padding:.8rem;color:var(--text)}
+#card-errors{color:var(--danger);font-size:.8rem;margin-top:.5rem;min-height:1.2rem}
+.payment-total{display:flex;justify-content:space-between;align-items:center;padding:.8rem 0;border-top:1px solid var(--border);margin-top:.8rem}
+.payment-total-label{font-size:.85rem;color:var(--text-muted)}
+.payment-total-price{font-family:'Noto Serif JP',serif;font-size:1.4rem;font-weight:700;color:var(--gold)}
+.btn-pay{display:block;width:100%;background:linear-gradient(135deg,#8B6914,var(--gold));color:var(--dark);border:none;padding:1rem 2rem;font-family:'Noto Serif JP',serif;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:.1em;transition:all .2s;margin-top:1rem}
+.btn-pay:hover{box-shadow:0 6px 20px rgba(201,168,76,.3)}
+.btn-pay:disabled{opacity:.5;cursor:not-allowed}
+.stripe-badge{font-size:.65rem;color:var(--text-muted);text-align:center;margin-top:.6rem}
+
+/* SUCCESS */
+#screen-success{text-align:center;justify-content:center}
+.success-icon{font-size:4rem;margin-bottom:1.5rem}
+.success-title{font-family:'Noto Serif JP',serif;font-size:1.6rem;font-weight:900;color:var(--gold);margin-bottom:.8rem}
+.success-msg{font-size:.9rem;color:var(--text-muted);line-height:1.8;max-width:400px}
+
+/* ===== SAMPLE PDF PAGE ===== */
+#screen-sample{background:var(--dark)}
+.pdf-page{max-width:640px;width:100%;background:var(--dark2);border:1px solid var(--border);margin-bottom:1.5rem;position:relative;overflow:hidden}
+.pdf-page::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold-dim),var(--gold),var(--gold-dim))}
+.pdf-header{background:linear-gradient(160deg,#1a1530,var(--dark2));padding:2.5rem 2rem;text-align:center;border-bottom:1px solid var(--border)}
+.pdf-badge{display:inline-block;background:rgba(201,168,76,.15);border:1px solid var(--gold-dim);font-size:.65rem;letter-spacing:.2em;color:var(--gold-dim);padding:.3rem .8rem;margin-bottom:1rem}
+.pdf-type-name{font-family:'Noto Serif JP',serif;font-size:2rem;font-weight:900;color:var(--gold);margin-bottom:.3rem}
+.pdf-legend-job{font-size:.8rem;color:var(--gold-dim);letter-spacing:.1em;margin-bottom:.5rem}
+.pdf-rank-row{display:flex;justify-content:center;gap:2rem;margin-top:1rem}
+.pdf-rank-item{text-align:center}
+.pdf-rank-label{font-size:.65rem;color:var(--text-muted);letter-spacing:.1em;margin-bottom:.2rem}
+.pdf-rank-val{font-family:'Noto Serif JP',serif;font-size:1.6rem;font-weight:900;color:var(--gold)}
+.pdf-section{padding:1.5rem 2rem;border-bottom:1px solid var(--border)}
+.pdf-section:last-child{border-bottom:none}
+.pdf-section-title{font-size:.72rem;letter-spacing:.2em;color:var(--gold-dim);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+.pdf-section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.pdf-text{font-size:.88rem;color:var(--text-muted);line-height:1.9}
+.pdf-highlight{background:rgba(201,168,76,.08);border-left:3px solid var(--gold);padding:.8rem 1rem;margin:1rem 0;font-size:.88rem;color:var(--text);line-height:1.7}
+.pdf-blur{filter:blur(5px);user-select:none;position:relative}
+.pdf-blur-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(10,10,15,.7);z-index:2;gap:.8rem}
+.pdf-blur-msg{font-family:'Noto Serif JP',serif;font-size:1rem;font-weight:700;color:var(--gold);text-align:center}
+.pdf-blur-sub{font-size:.78rem;color:var(--text-muted);text-align:center}
+.pdf-ability-row{display:flex;align-items:center;gap:.8rem;margin-bottom:.9rem}
+.pdf-ability-name{width:55px;font-size:.78rem;color:var(--text-muted);flex-shrink:0}
+.pdf-ability-bar-bg{flex:1;height:8px;background:var(--dark4);border-radius:4px;overflow:hidden}
+.pdf-ability-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold));border-radius:4px}
+.pdf-ability-val{width:35px;font-size:.82rem;color:var(--gold);text-align:right;flex-shrink:0}
+.watermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-30deg);font-family:'Noto Serif JP',serif;font-size:3rem;font-weight:900;color:rgba(201,168,76,.05);letter-spacing:.3em;white-space:nowrap;pointer-events:none;z-index:1}
+.sample-cta-bar{max-width:640px;width:100%;background:var(--dark3);border:1px solid var(--gold-dim);padding:1.5rem;text-align:center;margin-bottom:2rem;position:sticky;bottom:1rem}
+.sample-cta-title{font-family:'Noto Serif JP',serif;font-size:1rem;font-weight:700;color:var(--text);margin-bottom:.8rem}
+
+
+/* TOP nav buttons */
+.nav-top{position:fixed;top:1rem;right:1rem;z-index:50;display:flex;gap:.5rem}
+.nav-btn{background:var(--dark3);border:1px solid var(--border);color:var(--text-muted);font-size:.72rem;padding:.4rem .8rem;cursor:pointer;transition:all .2s}
+.nav-btn:hover{border-color:var(--gold-dim);color:var(--gold)}
+
+@media(max-width:500px){
+  .type-preview{grid-template-columns:repeat(2,1fr)}
+  .derived-grid{grid-template-columns:1fr 1fr}
+  .cta-contents{grid-template-columns:1fr}
+  .admin-stats{grid-template-columns:1fr 1fr}
+  .pdf-section{padding:1.2rem 1rem}
+  .email-banner{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+<div id="stars"></div>
+
+<!-- NAV：診断結果後のみ表示 -->
+<div class="nav-top" id="nav-top" style="display:none">
+  <button class="nav-btn" onclick="viewSample()">📄 サンプルを見る</button>
+</div>
+
+<!-- ===== TOP ===== -->
+<div id="screen-top" class="screen active">
+  <div class="logo-crest">⚔</div>
+  <p style="font-size:.72rem;letter-spacing:.25em;color:var(--text-muted);margin-bottom:.4rem">人生攻略ギルド</p>
+  <h1 class="service-title">運命職業診断</h1>
+  <p class="catchcopy">あなたの人生職業とLEGEND到達率がわかる</p>
+  <div class="divider"></div>
+  <button class="btn-primary" onclick="startQuiz()">診断開始する</button>
+  <p style="font-size:.75rem;color:var(--text-muted);margin-top:.8rem">所要時間：約5〜8分 ／ 全37問 ／ 無料</p>
+  <div class="type-preview">
+    <div class="type-badge highlight">FX フィクサー</div><div class="type-badge">KM キングメーカー</div>
+    <div class="type-badge">AI オールイン型</div><div class="type-badge highlight">ST 裏参謀</div>
+    <div class="type-badge">SH 心の避難所</div><div class="type-badge highlight">CN コネクター</div>
+    <div class="type-badge">HH 人類攻略型</div><div class="type-badge">IG 鉄壁ガード</div>
+    <div class="type-badge highlight">UP 未知開拓者</div><div class="type-badge">SR スター体質</div>
+    <div class="type-badge">IA アイデア中毒</div><div class="type-badge highlight">RB 常識破壊者</div>
+    <div class="type-badge">LG レベル上げ狂</div><div class="type-badge">MC マスター職人</div>
+    <div class="type-badge highlight">DB データ脳</div><div class="type-badge">BR 猪突猛進家</div>
+  </div>
+</div>
+
+<!-- ===== QUIZ ===== -->
+<div id="screen-quiz" class="screen">
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-fill"></div></div>
+  <p class="progress-text" id="progress-text">1 / 37</p>
+  <div class="question-card">
+    <p class="q-number" id="q-number">QUEST 01</p>
+    <p class="q-text" id="q-text"></p>
+  </div>
+  <div class="options-grid" id="options-container"></div>
+  <div class="nav-row">
+    <button class="btn-secondary" id="btn-back" onclick="goBack()">◀ 戻る</button>
+    <button class="btn-next" id="btn-next" onclick="goNext()" disabled>次へ ▶</button>
+  </div>
+</div>
+
+<!-- ===== LOADING ===== -->
+<div id="screen-loading" class="screen">
+  <div class="loading-crest"></div>
+  <p class="loading-text">冒険者ギルドが判定中…</p>
+  <p style="margin-top:1rem;font-size:.75rem;color:var(--text-muted)">あなたの真の職業を解析しています</p>
+</div>
+
+<!-- ===== RESULT ===== -->
+<div id="screen-result" class="screen">
+  <p style="font-size:.7rem;letter-spacing:.25em;color:var(--text-muted);margin-bottom:.3rem">人生攻略ギルド</p>
+  <p style="font-family:'Noto Serif JP',serif;font-size:.85rem;color:var(--gold-dim);letter-spacing:.15em;margin-bottom:1.5rem">運命職業診断</p>
+
+  <div class="result-header" style="max-width:600px;width:100%">
+    <p style="font-size:.75rem;color:var(--text-muted);letter-spacing:.1em;margin-bottom:.4rem">あなたの運命職業は</p>
+    <p class="result-type-code" id="r-type-code">FX</p>
+    <p class="result-kingdom" id="r-kingdom">── 支配王国 ──</p>
+    <h2 class="result-type-name" id="r-type-name">フィクサー</h2>
+    <p class="result-beast" id="r-beast">守護獣：漆黒の狼</p>
+    <div class="result-avatar" id="r-avatar">
+      <span class="avatar-placeholder" id="r-avatar-placeholder">⚔</span>
+    </div>
+    <p class="result-legend-job" id="r-legend-job">最終到達職業：運命編纂者</p>
+    <p class="result-dark-job" id="r-dark-job">⚠ 闇落ち職：操り人形師</p>
+  </div>
+
+  <div class="rank-badge-wrap">
+    <div class="rank-badge"><span class="rank-letter" id="r-rank">A</span><span class="rank-title-small" id="r-rank-title">英雄候補</span></div>
+    <div class="legend-rate-wrap">
+      <p class="legend-rate-label">LEGEND到達率</p>
+      <p class="legend-rate-value"><span id="r-legend-rate">82</span><span class="legend-rate-pct">%</span></p>
+    </div>
+  </div>
+
+  <!-- SNSシェア -->
+  <div class="share-section">
+    <p class="share-label">◆ シェアする</p>
+    <div class="share-buttons">
+      <button class="btn-share twitter" onclick="shareTwitter()">𝕏 Xでシェア</button>
+      <button class="btn-share threads" onclick="shareThreads()">@ Threadsでシェア</button>
+      <button class="btn-share instagram" onclick="shareInstagram()">📷 Instagram用コピー</button>
+      <button class="btn-share copy-btn" onclick="copyShareText()">📋 テキストをコピー</button>
+    </div>
+    <div id="copy-done" style="font-size:.75rem;color:var(--success);margin-top:.4rem;display:none">✓ コピーしました</div>
+  </div>
+
+  <!-- タイプ解説 -->
+  <div class="section-card">
+    <p class="section-label">◆ タイプ解説</p>
+    <p class="type-desc-text" id="r-type-desc"></p>
+  </div>
+
+  <!-- 覚醒ルート -->
+  <div class="section-card">
+    <p class="section-label">◆ 覚醒ルート（一部公開）</p>
+    <div class="awakening-list" id="awakening-list-free"></div>
+    <div class="awakening-locked">
+      <p class="lock-title">🔒 残り3つの覚醒条件は完全版で</p>
+      <p>LEGENDへの最終条件・闇落ち回避策も完全版に収録しています。</p>
+    </div>
+  </div>
+
+  <!-- 能力値 -->
+  <div class="section-card">
+    <p class="section-label">◆ ABILITY STATUS</p>
+    <div id="ability-bars"></div>
+  </div>
+
+  <!-- 派生指標 -->
+  <div class="section-card">
+    <p class="section-label">◆ DERIVED STATS</p>
+    <div class="derived-grid">
+      <div class="derived-item"><p class="derived-label">覚醒率</p><p class="derived-value"><span id="r-awakening">0</span></p></div>
+      <div class="derived-item"><p class="derived-label">恋愛偏差値</p><p class="derived-value"><span id="r-love">0</span></p></div>
+      <div class="derived-item"><p class="derived-label">仕事偏差値</p><p class="derived-value"><span id="r-work">0</span></p></div>
+    </div>
+  </div>
+
+  <!-- 相性 -->
+  <div class="section-card">
+    <p class="section-label">◆ 相性TOP3</p>
+    <div class="compat-list" id="compat-list"></div>
+    <p style="font-size:.72rem;color:var(--text-muted);margin-top:.8rem;text-align:center">🔒 4位〜16位の相性ランキングは完全版に収録</p>
+  </div>
+
+  <!-- メール登録 -->
+  <div class="section-card" id="email-register-section">
+    <p class="section-label">◆ 無料メール登録</p>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:.8rem;line-height:1.7">登録すると、あなたのタイプに合った攻略ヒントを無料でお届けします。</p>
+    <div class="email-inline-form">
+      <input type="email" class="email-inline-input" id="free-email" placeholder="メールアドレスを入力">
+      <button class="btn-email-register" onclick="registerEmail()">登録する</button>
+    </div>
+    <div class="email-success modal-hidden" id="email-success-msg">✓ 登録しました！攻略ヒントをお楽しみに。</div>
+  </div>
+
+  <!-- ===== 有料CTA ===== -->
+  <div class="cta-section">
+    <p class="cta-eyebrow">── COMPLETE YOUR QUEST ──</p>
+    <div class="cta-main-card">
+      <p class="cta-tagline">あなただけの「人生攻略書」で<br>LEGENDへの最短ルートを手に入れる</p>
+      <p class="cta-sub">無料診断では見えない、あなたの深層能力・覚醒条件・<br>全16タイプとの相性ランキングを完全収録。</p>
+      <div class="cta-contents">
+        <div class="cta-content-item"><span class="icon">📊</span>詳細な能力値分析レポート</div>
+        <div class="cta-content-item"><span class="icon">⚡</span>覚醒ルート・条件解説</div>
+        <div class="cta-content-item"><span class="icon">⚠</span>闇落ちルート警告と対策</div>
+        <div class="cta-content-item"><span class="icon">💞</span>恋愛攻略ガイド</div>
+        <div class="cta-content-item"><span class="icon">💼</span>仕事攻略マップ</div>
+        <div class="cta-content-item"><span class="icon">💰</span>お金攻略戦略</div>
+        <div class="cta-content-item"><span class="icon">🏆</span>全16タイプ相性ランキング</div>
+        <div class="cta-content-item"><span class="icon">👑</span>LEGEND到達条件 完全版</div>
+      </div>
+      <div class="price-block">
+        <p class="price-regular">通常価格 <s>¥3,980</s></p>
+        <div style="display:inline-block;background:var(--danger);color:#fff;font-size:.7rem;font-weight:700;padding:.2rem .7rem;letter-spacing:.1em;margin-bottom:.4rem">期間限定 50%OFF</div>
+        <div class="price-main">
+          <span class="price-currency">¥</span>
+          <span class="price-amount">1,980</span>
+          <span class="price-unit">（税込）</span>
+        </div>
+        <p class="price-tax">今だけの特別価格（税込）／ 通常に戻り次第お知らせなし</p>
+      </div>
+      <a class="sample-link" onclick="viewSample()" id="sample-link-text">▸ 無料サンプルを見る</a>
+      <button class="btn-purchase" id="btn-purchase" onclick="openPaymentModal()">自分専用の人生攻略書を手に入れる ▸</button>
+      <p class="purchase-note">✓ 購入後すぐにPDFを自動生成・ダウンロードできます<br>✓ あなたのタイプ・ランク・到達率に応じた完全個別内容</p>
+      <div class="security-badges">
+        <span class="security-badge">🔒 SSL暗号化</span>
+        <span class="security-badge">💳 Stripe決済</span>
+        <span class="security-badge">📧 即時対応</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SUCCESS ===== -->
+<div id="screen-success" class="screen">
+  <div class="success-icon">🎉</div>
+  <h2 class="success-title">お申し込み完了！</h2>
+  <p class="success-msg" id="success-msg">ご購入ありがとうございます。<br>ご登録のメールアドレスに、確認メールをお送りしました。<br><br>担当者が個別PDFを作成後、<strong style="color:var(--gold)">48時間以内</strong>にお届けします。</p>
+  <div style="margin-top:2rem;display:flex;flex-direction:column;align-items:center;gap:1rem;width:100%;max-width:360px">
+    <button class="btn-purchase" id="btn-download-pdf" onclick="handleDownloadPDF()" style="width:100%">
+      📄 人生攻略書をダウンロードする
+    </button>
+    <p style="font-size:.72rem;color:var(--text-muted);text-align:center">PDFは自動生成されます。お名前・タイプ・到達率に応じた個別内容です。</p>
+    <button class="btn-secondary" onclick="showScreen('top')" style="width:100%">トップに戻る</button>
+  </div>
+</div>
+
+<!-- ===== SAMPLE PDF ===== -->
+<div id="screen-sample" class="screen">
+  <div style="max-width:640px;width:100%;display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+    <p style="font-size:.72rem;color:var(--text-muted);letter-spacing:.15em" id="sample-header-label">◆ サンプル閲覧</p>
+    <button class="btn-secondary" onclick="goBackFromSample()" style="padding:.4rem .8rem;font-size:.75rem">← 戻る</button>
+  </div>
+
+  <div class="pdf-page">
+    <div class="watermark">SAMPLE</div>
+    <!-- Cover -->
+    <div class="pdf-header">
+      <div class="pdf-badge">運命職業診断 完全版 — 人生攻略書</div>
+      <div style="font-size:2.5rem;margin-bottom:.5rem" id="pdf-avatar">⚔</div>
+      <p class="pdf-type-name" id="pdf-type-name">フィクサー</p>
+      <p class="pdf-legend-job" id="pdf-legend-line">LEGEND職：運命編纂者 ／ 闇落ち職：操り人形師</p>
+      <p style="font-size:.75rem;color:var(--text-muted);margin-top:.3rem" id="pdf-kingdom-line">所属王国：支配王国「世界は動かすもの」</p>
+      <div class="pdf-rank-row">
+        <div class="pdf-rank-item"><p class="pdf-rank-label">ランク</p><p class="pdf-rank-val" id="pdf-rank">A</p></div>
+        <div class="pdf-rank-item"><p class="pdf-rank-label">LEGEND到達率</p><p class="pdf-rank-val" id="pdf-legend-rate">88%</p></div>
+        <div class="pdf-rank-item"><p class="pdf-rank-label">称号</p><p class="pdf-rank-val" style="font-size:1rem" id="pdf-rank-title">英雄候補</p></div>
+      </div>
+    </div>
+
+    <!-- 能力値 -->
+    <div class="pdf-section">
+      <p class="pdf-section-title">ABILITY STATUS</p>
+      <div id="pdf-ability-bars"></div>
+    </div>
+
+    <!-- タイプ解説（公開） -->
+    <div class="pdf-section">
+      <p class="pdf-section-title">タイプ解説</p>
+      <p class="pdf-text" id="pdf-type-desc"></p>
+    </div>
+
+    <!-- 覚醒ルート（公開） -->
+    <div class="pdf-section">
+      <p class="pdf-section-title">覚醒ルート（一部公開）</p>
+      <p class="pdf-text" id="pdf-awakening-intro">LEGENDに覚醒するための第一条件：</p>
+      <div class="pdf-highlight" id="pdf-awakening-free"></div>
+      <p class="pdf-text" style="margin-top:.5rem">残りの覚醒条件（全5つ）・詳細ロードマップは完全版に収録。</p>
+    </div>
+
+    <!-- 闇落ちルート（ぼかし） -->
+    <div class="pdf-section" style="position:relative;min-height:160px">
+      <p class="pdf-section-title">闇落ちルートと回避策</p>
+      <div class="pdf-blur">
+        <p class="pdf-text" id="pdf-dark-text"></p>
+        <div class="pdf-highlight">チェックリスト・回避策は完全版に収録。</div>
+      </div>
+      <div class="pdf-blur-overlay">
+        <p class="pdf-blur-msg">🔒 完全版で解禁</p>
+        <p class="pdf-blur-sub">闇落ちの引き金・回避策を収録</p>
+      </div>
+    </div>
+
+    <!-- 恋愛攻略（ぼかし） -->
+    <div class="pdf-section" style="position:relative;min-height:160px">
+      <p class="pdf-section-title">恋愛攻略ガイド</p>
+      <div class="pdf-blur">
+        <p class="pdf-text" id="pdf-love-text"></p>
+      </div>
+      <div class="pdf-blur-overlay">
+        <p class="pdf-blur-msg">🔒 完全版で解禁</p>
+        <p class="pdf-blur-sub">恋愛パターン・相性・攻略法を収録</p>
+      </div>
+    </div>
+
+    <!-- 仕事・お金（ぼかし） -->
+    <div class="pdf-section" style="position:relative;min-height:140px">
+      <p class="pdf-section-title">仕事攻略 / お金攻略</p>
+      <div class="pdf-blur">
+        <p class="pdf-text" id="pdf-work-text"></p>
+      </div>
+      <div class="pdf-blur-overlay">
+        <p class="pdf-blur-msg">🔒 完全版で解禁</p>
+        <p class="pdf-blur-sub">仕事・年収・お金戦略を収録</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- サンプルCTA -->
+  <div class="sample-cta-bar">
+    <p class="sample-cta-title">完全版を手に入れてLEGENDへ</p>
+    <button class="btn-purchase" style="max-width:400px;margin:0 auto" onclick="showScreen('result'); setTimeout(openPaymentModal, 300)">¥1,980 で完全版を購入する ▸</button>
+  </div>
+</div>
+
+<!-- ===== PAYMENT MODAL ===== -->
+<div id="payment-modal" class="modal-overlay modal-hidden">
+  <div class="modal-box" style="max-width:520px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem">
+      <p class="modal-title" style="margin:0">▸ 人生攻略書 ¥1,980</p>
+      <button onclick="closePaymentModal()" style="background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer">✕</button>
+    </div>
+
+    <div id="payment-step-1">
+      <p class="description-text">購入後、メールにてPDFをお届けします（48時間以内）。</p>
+      <div class="form-group">
+        <label class="form-label">お名前 / ニックネーム <span style="color:var(--danger)">*</span></label>
+        <input type="text" class="form-input" id="p-name" placeholder="例：勇者たろう">
+      </div>
+      <div class="form-group">
+        <label class="form-label">メールアドレス <span style="color:var(--danger)">*</span></label>
+        <input type="email" class="form-input" id="p-email" placeholder="例：you@example.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">診断タイプ（自動入力）</label>
+        <input type="text" class="form-input" id="p-type" readonly>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ランク / LEGEND到達率（自動入力）</label>
+        <input type="text" class="form-input" id="p-rank" readonly>
+      </div>
+      <div style="display:flex;gap:.8rem;margin-top:1.2rem">
+        <button class="btn-secondary" onclick="closePaymentModal()" style="flex:1">キャンセル</button>
+        <button class="btn-primary" onclick="goToPayment()" style="flex:2">決済へ進む ▸</button>
+      </div>
+    </div>
+
+    <div id="payment-step-2" class="modal-hidden">
+      <div class="stripe-section">
+        <p class="stripe-section-label">◆ お支払い情報</p>
+        <div id="card-element"></div>
+        <div id="card-errors"></div>
+        <div class="payment-total">
+          <span class="payment-total-label">合計（税込）</span>
+          <span class="payment-total-price">¥1,980</span>
+        </div>
+      </div>
+      <div style="background:var(--dark3);border:1px solid var(--border);padding:.8rem;font-size:.78rem;color:var(--text-muted);margin-bottom:1rem">
+        購入者：<span id="p2-name" style="color:var(--text)"></span><br>
+        送付先：<span id="p2-email" style="color:var(--gold)"></span>
+      </div>
+      <button class="btn-pay" id="btn-pay" onclick="processPayment()">¥1,980 で購入する 🔒</button>
+      <p class="stripe-badge">Stripe による安全な決済 ／ カード情報はサーバーに保存されません</p>
+      <button class="btn-secondary" onclick="backToStep1()" style="margin-top:.8rem;font-size:.8rem;width:100%">← 情報入力に戻る</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== DATA ==========
+const DATA = {
+  abilities:{domination:"支配力",empathy:"共感力",creation:"創造力",action:"行動力",growth:"成長力",analysis:"分析力",guardian:"守護力"},
+  kingdoms:{
+    dominion:{name:"支配王国",theme:"世界は動かすもの",kgClass:"kingdom-dominion"},
+    resonance:{name:"共鳴王国",theme:"人は一人で生きられない",kgClass:"kingdom-resonance"},
+    creation:{name:"創造王国",theme:"世界は創るもの",kgClass:"kingdom-creation"},
+    growth:{name:"成長王国",theme:"昨日の自分を超えろ",kgClass:"kingdom-growth"}
+  },
+  types:[
+    {id:"fixer",        code:"FX", name:"フィクサー",    kingdom:"dominion", mainAbilities:["domination","analysis"], subAbility:"empathy",    legendJob:"運命編纂者",   darkJob:"操り人形師",   beast:"漆黒の狼",    img:"fx.png",  fallback:"⚔"},
+    {id:"kingmaker",    code:"KM", name:"キングメーカー", kingdom:"dominion", mainAbilities:["domination","empathy"],  subAbility:"growth",     legendJob:"王冠鋳造者",   darkJob:"傀儡王",       beast:"黄金の獅子",  img:"km.png",  fallback:"👑"},
+    {id:"all_in",       code:"AI", name:"オールイン型",  kingdom:"dominion", mainAbilities:["action","domination"],   subAbility:"creation",   legendJob:"運命征服者",   darkJob:"ギャンブラー", beast:"紅蓮の虎",    img:"ai.png",  fallback:"🎲"},
+    {id:"strategist",   code:"ST", name:"裏参謀",        kingdom:"dominion", mainAbilities:["analysis","domination"], subAbility:"guardian",   legendJob:"千局観測者",   darkJob:"机上の軍師",   beast:"夜梟",        img:"st.png",  fallback:"♟"},
+    {id:"safe_haven",   code:"SH", name:"心の避難所",    kingdom:"resonance",mainAbilities:["empathy","guardian"],    subAbility:"growth",     legendJob:"万灯の聖人",   darkJob:"自己犠牲者",   beast:"白熊の聖騎士",img:"sh.png",  fallback:"🏔"},
+    {id:"connector",    code:"CN", name:"コネクター",    kingdom:"resonance",mainAbilities:["empathy","domination"],  subAbility:"action",     legendJob:"世界結節点",   darkJob:"八方美人",     beast:"青イルカ",    img:"cn.png",  fallback:"🔗"},
+    {id:"human_hacker", code:"HH", name:"人類攻略型",   kingdom:"resonance",mainAbilities:["empathy","analysis"],    subAbility:"domination", legendJob:"心象解読者",   darkJob:"カメレオン",   beast:"銀狐",        img:"hh.png",  fallback:"🦊"},
+    {id:"iron_guard",   code:"IG", name:"鉄壁ガード",   kingdom:"resonance",mainAbilities:["guardian","growth"],     subAbility:"empathy",    legendJob:"永久城塞",     darkJob:"自己封印者",   beast:"守護亀",      img:"ig.png",  fallback:"🛡"},
+    {id:"unknown_pioneer",code:"UP",name:"未知開拓者",  kingdom:"creation", mainAbilities:["creation","action"],     subAbility:"domination", legendJob:"地平線の先導者",darkJob:"放浪者",      beast:"蒼龍",        img:"up.png",  fallback:"🗺"},
+    {id:"star",         code:"SR", name:"スター体質",   kingdom:"creation", mainAbilities:["domination","creation"], subAbility:"empathy",    legendJob:"時代の象徴",   darkJob:"承認中毒者",   beast:"孔雀王",      img:"sr.png",  fallback:"⭐"},
+    {id:"idea_addict",  code:"IA", name:"アイデア中毒", kingdom:"creation", mainAbilities:["creation","analysis"],   subAbility:"action",     legendJob:"世界創造主",   darkJob:"永遠の構想家", beast:"九尾狐",      img:"ia.png",  fallback:"💡"},
+    {id:"rule_breaker", code:"RB", name:"常識破壊者",   kingdom:"creation", mainAbilities:["creation","domination"], subAbility:"action",     legendJob:"法則改変者",   darkJob:"孤独な革命家", beast:"黒山羊",      img:"rb.png",  fallback:"💥"},
+    {id:"level_grinder",code:"LG", name:"レベル上げ狂", kingdom:"growth",   mainAbilities:["growth","action"],       subAbility:"analysis",   legendJob:"無限到達者",   darkJob:"終わらない修行僧",beast:"金猿",     img:"lg.png",  fallback:"📈"},
+    {id:"master_craftsman",code:"MC",name:"マスター職人",kingdom:"growth",  mainAbilities:["growth","analysis"],     subAbility:"guardian",   legendJob:"神工鬼匠",     darkJob:"永遠の未完成者",beast:"白狼工匠",   img:"mc.png",  fallback:"🔨"},
+    {id:"data_brain",   code:"DB", name:"データ脳",     kingdom:"growth",   mainAbilities:["analysis","growth"],     subAbility:"guardian",   legendJob:"根源観測者",   darkJob:"評論家",       beast:"賢龍",        img:"db.png",  fallback:"📊"},
+    {id:"boar_rusher",  code:"BR", name:"猪突猛進家",   kingdom:"growth",   mainAbilities:["action","growth"],       subAbility:"domination", legendJob:"第一歩の英雄", darkJob:"暴走特急",     beast:"猪武者",      img:"br.png",  fallback:"⚡"}
+  ],
+  rankRules:[
+    {rank:"E",min:0,max:20,title:"眠れる才能"},
+    {rank:"D",min:20,max:40,title:"覚醒予備軍"},
+    {rank:"C",min:40,max:60,title:"成長者"},
+    {rank:"B",min:60,max:80,title:"覚醒者"},
+    {rank:"A",min:80,max:95,title:"英雄候補"},
+    {rank:"S",min:95,max:100,title:"LEGEND候補者"}
+  ],
+  questions:[
+    {id:1,text:"突然、1週間の完全な自由時間と十分なお金が手に入りました。最もやりたいことは？",options:[{key:"A",text:"行ったことのない場所へ旅に出る",scores:{action:1,creation:1}},{key:"B",text:"将来に役立つ勉強やスキル習得をする",scores:{growth:3,analysis:1}},{key:"C",text:"大切な人たちと充実した時間を過ごす",scores:{empathy:3,guardian:1}},{key:"D",text:"好きな創作や趣味に没頭する",scores:{creation:3,growth:1}}]},
+    {id:2,text:"100万円を自由に使えるとしたら？",options:[{key:"A",text:"新しい挑戦や事業に投資する",scores:{action:2,domination:2}},{key:"B",text:"学習・資格・自己成長に使う",scores:{growth:3,analysis:1}},{key:"C",text:"家族や友人との経験に使う",scores:{empathy:3,guardian:1}},{key:"D",text:"自分の夢や作品づくりに使う",scores:{creation:3,action:1}}]},
+    {id:3,text:"あなたにとって人生はどんなゲームに近い？",options:[{key:"A",text:"未知の世界を探索するオープンワールド",scores:{creation:2,action:2}},{key:"B",text:"強くなり続ける育成ゲーム",scores:{growth:3,analysis:1}},{key:"C",text:"仲間と協力するオンラインRPG",scores:{empathy:2,guardian:2}},{key:"D",text:"世界を創るシミュレーションゲーム",scores:{creation:3,domination:1}}]},
+    {id:4,text:"次の能力を一つだけ得られるとしたら？",options:[{key:"A",text:"どこへでも行ける能力",scores:{action:2,creation:1}},{key:"B",text:"あらゆる知識を瞬時に理解できる能力",scores:{analysis:3,growth:1}},{key:"C",text:"人の気持ちを正確に理解できる能力",scores:{empathy:3,guardian:1}},{key:"D",text:"想像したものを形にできる能力",scores:{creation:3,domination:1}}]},
+    {id:5,text:"最も尊敬する人物像は？",options:[{key:"A",text:"誰も見たことのない世界を切り開く人",scores:{action:2,creation:2}},{key:"B",text:"努力で頂点に到達した人",scores:{growth:3,guardian:1}},{key:"C",text:"多くの人から愛される人",scores:{empathy:2,domination:1}},{key:"D",text:"時代を変えるアイデアを生んだ人",scores:{creation:2,domination:2}}]},
+    {id:6,text:"人生で最も大切だと思うものは？",options:[{key:"A",text:"自由",scores:{action:2,creation:2}},{key:"B",text:"成長",scores:{growth:3,analysis:1}},{key:"C",text:"信頼",scores:{empathy:2,guardian:2}},{key:"D",text:"影響力",scores:{domination:3,analysis:1}}]},
+    {id:7,text:"もし明日から働かなくても生活できるとしたら？",options:[{key:"A",text:"世界中を見て回る",scores:{action:2,creation:1}},{key:"B",text:"興味のある分野を徹底的に学ぶ",scores:{analysis:2,growth:2}},{key:"C",text:"人との繋がりを深める",scores:{empathy:3,guardian:1}},{key:"D",text:"新しい作品や企画を生み出す",scores:{creation:3,domination:1}}]},
+    {id:8,text:"映画の主人公になるなら？",options:[{key:"A",text:"冒険家",scores:{action:2,creation:1}},{key:"B",text:"努力型の英雄",scores:{growth:3,action:1}},{key:"C",text:"仲間を支えるリーダー",scores:{empathy:2,domination:2}},{key:"D",text:"天才発明家",scores:{creation:3,analysis:1}}]},
+    {id:9,text:"初めて参加した交流会。あなたはどうする？",options:[{key:"A",text:"面白そうな人を探して話しかける",scores:{action:2,domination:1}},{key:"B",text:"全体を観察してから動く",scores:{analysis:3,guardian:1}},{key:"C",text:"自然に話しかけられるのを待つ",scores:{empathy:1,guardian:2}},{key:"D",text:"共通点がある人を探す",scores:{empathy:2,analysis:1}}]},
+    {id:10,text:"大勢の前で話す機会が来ました。最も近い反応は？",options:[{key:"A",text:"ワクワクする",scores:{domination:2,action:2}},{key:"B",text:"内容を完璧に準備したい",scores:{analysis:2,growth:1}},{key:"C",text:"聞く人の反応が気になる",scores:{empathy:2,guardian:1}},{key:"D",text:"自分らしく伝えたい",scores:{creation:2,domination:1}}]},
+    {id:11,text:"チームで進めていた企画に大きな問題が発生しました。まず最初に何をしますか？",options:[{key:"A",text:"とにかく自分が動いて状況を変える",scores:{action:3,domination:1}},{key:"B",text:"原因を分析して最適な解決策を探す",scores:{analysis:3,guardian:1}},{key:"C",text:"メンバーの状況や気持ちを確認する",scores:{empathy:3,guardian:1}},{key:"D",text:"新しい発想で突破口を探す",scores:{creation:3,action:1}}]},
+    {id:12,text:"旅行先で予定がすべて崩れました。あなたは？",options:[{key:"A",text:"面白そうなのでそのまま流れに乗る",scores:{action:2,creation:1}},{key:"B",text:"すぐ代替案を考える",scores:{analysis:2,guardian:2}},{key:"C",text:"一緒にいる人が楽しめる方法を考える",scores:{empathy:3,domination:1}},{key:"D",text:"逆に予想外の体験を楽しむ",scores:{creation:2,action:2}}]},
+    {id:13,text:"ゲームをしていて最も楽しい瞬間は？",options:[{key:"A",text:"新しいエリアを発見した時",scores:{action:2,creation:1}},{key:"B",text:"レベルアップした時",scores:{growth:3}},{key:"C",text:"仲間と協力して勝利した時",scores:{empathy:2,guardian:1,domination:1}},{key:"D",text:"独自の攻略法を見つけた時",scores:{analysis:2,creation:2}}]},
+    {id:14,text:"学生時代、最も近かった立場は？",options:[{key:"A",text:"とりあえず先頭に立つ人",scores:{domination:2,action:2}},{key:"B",text:"裏で考える人",scores:{analysis:3}},{key:"C",text:"みんなをまとめる人",scores:{empathy:2,domination:2}},{key:"D",text:"独自路線を行く人",scores:{creation:3,action:1}}]},
+    {id:15,text:"自分の部屋はどちらかというと？",options:[{key:"A",text:"思い立ったらすぐ動ける状態",scores:{action:2}},{key:"B",text:"整理されていて管理しやすい",scores:{guardian:3,analysis:1}},{key:"C",text:"居心地を重視している",scores:{empathy:2,guardian:2}},{key:"D",text:"好きなものやアイデアで溢れている",scores:{creation:3}}]},
+    {id:16,text:"休日に最もエネルギーが回復する過ごし方は？",options:[{key:"A",text:"外へ出て刺激を受ける",scores:{action:2,creation:1}},{key:"B",text:"勉強や自己投資をする",scores:{growth:3,analysis:1}},{key:"C",text:"気の合う人と過ごす",scores:{empathy:3}},{key:"D",text:"一人で好きなことに没頭する",scores:{creation:2,growth:1}}]},
+    {id:17,text:"親しい友人から深刻な悩みを相談されました。最も近い反応は？",options:[{key:"A",text:"「まず何をすればいいか」を一緒に考える",scores:{action:1,domination:1,guardian:1}},{key:"B",text:"原因や状況を整理する",scores:{analysis:3}},{key:"C",text:"とにかく話を聞く",scores:{empathy:3}},{key:"D",text:"相手が気付いていない可能性を提示する",scores:{creation:2,analysis:1}}]},
+    {id:18,text:"一緒に仕事をする仲間を選ぶなら？",options:[{key:"A",text:"行動力がある人",scores:{action:2,domination:1}},{key:"B",text:"優秀で頭が切れる人",scores:{analysis:3}},{key:"C",text:"信頼できる人",scores:{empathy:1,guardian:3}},{key:"D",text:"面白い発想を持つ人",scores:{creation:3}}]},
+    {id:19,text:"チームの中で自然となりやすい役割は？",options:[{key:"A",text:"引っ張る人",scores:{domination:3,action:1}},{key:"B",text:"作戦を考える人",scores:{analysis:3,domination:1}},{key:"C",text:"調整する人",scores:{empathy:2,guardian:2}},{key:"D",text:"アイデアを出す人",scores:{creation:3}}]},
+    {id:20,text:"恋愛において最も大切だと思うものは？",options:[{key:"A",text:"一緒に成長できること",scores:{growth:3,empathy:1}},{key:"B",text:"尊敬できること",scores:{analysis:1,growth:1,domination:1}},{key:"C",text:"安心感があること",scores:{empathy:2,guardian:3}},{key:"D",text:"刺激や特別感があること",scores:{creation:2,action:2}}]},
+    {id:21,text:"自分より成功している人を見た時、最も近い感情は？",options:[{key:"A",text:"「自分も負けていられない」",scores:{action:2,domination:2}},{key:"B",text:"「どうやって成功したのだろう」",scores:{analysis:3,growth:1}},{key:"C",text:"「すごいな。応援したい」",scores:{empathy:2,guardian:1}},{key:"D",text:"「自分なら別のやり方をする」",scores:{creation:2,domination:1}}]},
+    {id:22,text:"他人から言われて最も嬉しい言葉は？",options:[{key:"A",text:"「行動力があるね」",scores:{action:3}},{key:"B",text:"「頭がいいね」",scores:{analysis:3}},{key:"C",text:"「一緒にいると安心する」",scores:{empathy:2,guardian:2}},{key:"D",text:"「発想が面白いね」",scores:{creation:3}}]},
+    {id:23,text:"周囲からよく言われる特徴は？",options:[{key:"A",text:"決断が早い",scores:{action:2,domination:1}},{key:"B",text:"冷静で分析的",scores:{analysis:3}},{key:"C",text:"面倒見が良い",scores:{empathy:2,guardian:2}},{key:"D",text:"個性的",scores:{creation:3}}]},
+    {id:24,text:"長い時間をかけて準備した計画が突然白紙になりました。最も強く感じるのは？",options:[{key:"A",text:"「また挑戦すればいい」",scores:{action:3}},{key:"B",text:"「何が原因だったのか知りたい」",scores:{analysis:3}},{key:"C",text:"「関わった人は大丈夫だろうか」",scores:{empathy:3}},{key:"D",text:"「もっと良い方法があったかもしれない」",scores:{creation:2,analysis:1}}]},
+    {id:25,text:"次の能力を一つだけ得られるなら？",options:[{key:"A",text:"どんな状況でも人を動かせる力",scores:{domination:3}},{key:"B",text:"世界中の真実を知る力",scores:{analysis:3}},{key:"C",text:"誰からも信頼される力",scores:{empathy:2,guardian:2}},{key:"D",text:"新しいものを無限に生み出す力",scores:{creation:3}}]},
+    {id:26,text:"子供の頃から今まで、最も変わらない特徴は？",options:[{key:"A",text:"好奇心が強い",scores:{creation:2,action:1}},{key:"B",text:"納得するまで考える",scores:{analysis:3}},{key:"C",text:"人の気持ちが気になる",scores:{empathy:3}},{key:"D",text:"変わったことが好き",scores:{creation:3}}]},
+    {id:27,text:"「実はあなたって○○だよね」と言われるなら、どれが一番しっくり来る？",options:[{key:"A",text:"野心家",scores:{domination:2,action:1}},{key:"B",text:"策士",scores:{analysis:2,domination:1}},{key:"C",text:"優しい人",scores:{empathy:3}},{key:"D",text:"自由人",scores:{creation:2,action:1}}]},
+    {id:28,text:"人生で最も苦しいと感じる状況は？",options:[{key:"A",text:"何も挑戦できない",scores:{action:3}},{key:"B",text:"自分で考える余地がない",scores:{analysis:3}},{key:"C",text:"信頼していた人を失う",scores:{empathy:2,guardian:2}},{key:"D",text:"個性を否定される",scores:{creation:3}}]},
+    {id:29,text:"80歳になった自分が後悔するとしたら、最も近いものは？",options:[{key:"A",text:"もっと大きな挑戦をすればよかった",scores:{action:3,domination:1}},{key:"B",text:"もっと学んでおけばよかった",scores:{growth:2,analysis:2}},{key:"C",text:"もっと大切な人との時間を作ればよかった",scores:{empathy:3,guardian:1}},{key:"D",text:"もっと自分らしく生きればよかった",scores:{creation:3,action:1}}]},
+    {id:30,text:"もし18歳に戻れるとして、今の記憶を持ったまま人生をやり直せるなら？",options:[{key:"A",text:"より大きな成功を目指す",scores:{domination:3,action:1}},{key:"B",text:"もっと賢く効率よく生きる",scores:{analysis:3,growth:1}},{key:"C",text:"より多くの人との縁を大切にする",scores:{empathy:3,guardian:1}},{key:"D",text:"本当にやりたいことを貫く",scores:{creation:2,action:2}}]},
+    {id:31,text:"カフェに入った時、無意識に目が行くのは？",options:[{key:"A",text:"窓の外の景色",scores:{creation:1}},{key:"B",text:"店内のレイアウト",scores:{analysis:1}},{key:"C",text:"他のお客さんの雰囲気",scores:{empathy:1}},{key:"D",text:"メニューや雑貨",scores:{creation:1}}]},
+    {id:32,text:"学生時代に好きだった席は？",options:[{key:"A",text:"窓側後方",scores:{creation:1}},{key:"B",text:"前方中央",scores:{growth:1}},{key:"C",text:"真ん中付近",scores:{empathy:1}},{key:"D",text:"その時の気分",scores:{action:1}}]},
+    {id:33,text:"初対面の犬が近寄ってきました。最初に思うことは？",options:[{key:"A",text:"撫でたい",scores:{empathy:1}},{key:"B",text:"どんな犬種だろう",scores:{analysis:1}},{key:"C",text:"飼い主はどんな人だろう",scores:{empathy:1}},{key:"D",text:"なぜ自分に来たのだろう",scores:{analysis:1}}]},
+    {id:34,text:"自分の人生を色で表すなら？",options:[{key:"A",text:"赤",scores:{action:1}},{key:"B",text:"青",scores:{analysis:1}},{key:"C",text:"緑",scores:{empathy:1}},{key:"D",text:"紫",scores:{creation:1}}]},
+    {id:35,text:"自分専用の部屋を作るなら？",options:[{key:"A",text:"世界地図だらけの部屋",scores:{action:1,creation:1}},{key:"B",text:"本と資料だらけの部屋",scores:{analysis:1,growth:1}},{key:"C",text:"仲間が集まる部屋",scores:{empathy:1,domination:1}},{key:"D",text:"アイデアを書き殴れる部屋",scores:{creation:2}}]},
+    {id:36,text:"朝食はどちらかというと？",options:[{key:"A",text:"パン派",scores:{}},{key:"B",text:"ご飯派",scores:{}},{key:"C",text:"食べない",scores:{}},{key:"D",text:"日による",scores:{}}]},
+    {id:37,text:"一番好きな季節は？",options:[{key:"A",text:"春",scores:{}},{key:"B",text:"夏",scores:{}},{key:"C",text:"秋",scores:{}},{key:"D",text:"冬",scores:{}}]}
+  ]
+};
+
+/* ============================================================
+   運命職業診断 — タイプ別詳細コンテンツ データベース
+   結果ページの簡易説明文 + 有料PDF本文（全16タイプ）
+
+   構成：
+   - shortDesc      : 無料結果ページ用 簡易説明文
+   - awakening      : 覚醒ルート5条件（①②は無料公開、③〜⑤は有料）
+   - darkRoute      : 闇落ちルート（全文有料）
+       intro, checklist[3], avoidance[3]
+   - love           : 恋愛攻略（全文有料）
+       attracted, pitfall, ideal
+   - work           : 仕事攻略（全文有料）
+       goodEnv, avoidEnv, skill
+   - money          : お金攻略（全文有料・1段落）
+   - compatibility  : 相性（top3は結果ページ無料公開、残りは有料）
+       top: [{code,name,comment} x3], last:{code,name,comment}
+   - legendCondition: LEGEND到達条件・最終条件（全文有料）
+   ============================================================ */
+
+const TYPE_CONTENT = {
+
+// ============================================================
+FX: {
+  shortDesc: "フィクサーは、表舞台に立たず物事を裏側から整える「調整役」タイプ。状況を一歩引いて観察し、誰がどう動けば全体がうまくいくかを静かに見抜く力に優れています。感情よりも構造で物事を捉えるため、周囲からは「冷静で頼れる人」と評されることが多いはず。あなたの分析力と支配力は、チームやコミュニティの「縁の下の設計者」として発揮されるでしょう。",
+  awakening: [
+    "観察を行動に変える：分析した情報を、自分の中に留めず「一手」として外に出す習慣をつける。",
+    "誰かのために考える：自分の得のためではなく、チームやパートナーの利益のために頭脳を使う場面を増やす。",
+    "感情を切り捨てない：合理性だけでなく、相手の感情も判断材料に含めることで、より精度の高い一手が打てるようになる。",
+    "「裏方」であることを楽しむ：評価や注目を求めず、物事がうまく進むこと自体に満足を見出せると、覚醒のスピードが上がる。",
+    "少数の信頼できる相手と深く組む：広く浅くではなく、信頼できる相手と長期的なパートナーシップを築くことで、影響力が安定する。"
+  ],
+  darkRoute: {
+    intro: "フィクサーが疲れていたり、信頼が満たされていないとき、「人を駒のように動かしてしまう」傾向が出やすくなります。本人に悪意はなくても、周囲からは「都合よく使われている」と感じられてしまうことがあります。",
+    checklist: [
+      "最近、人との会話が「情報を引き出す」目的に偏っていないか",
+      "「自分が一番状況を分かっている」という感覚が強くなっていないか",
+      "相手の感情よりも、結果や効率を優先しがちになっていないか"
+    ],
+    avoidance: [
+      "月に一度、損得を考えずに誰かの話をただ聞く時間をつくる",
+      "「自分の判断が間違っているかもしれない」という前提を持つ",
+      "信頼できる相手には、計算抜きの本音を見せる"
+    ]
+  },
+  love: {
+    attracted: "感情表現が豊かで、フィクサーの「静かな観察」を心地よいと感じてくれる人。共感力が高めのタイプと特に相性が良い傾向。",
+    pitfall: "関係を「管理」しようとしてしまうこと。相手の行動を先読みしすぎると、「信頼されていない」と受け取られる場合があります。",
+    ideal: "フィクサーの計画性を尊重しつつ、時に「考えすぎだよ」と笑って肩の力を抜かせてくれる人。"
+  },
+  work: {
+    goodEnv: "裏方としての参謀・戦略・分析ポジション。経営企画、コンサルティング、プロデューサー、編集者など「全体を設計する」役割。",
+    avoidEnv: "誰かの感情的な意思決定に振り回される現場、もしくは「常に最前線でスピード対応」が求められる職種。考える時間が確保できない環境はミスマッチになりやすい。",
+    skill: "プレゼンテーション・発信力。裏方の分析を「人に伝わる形」に変換できると、影響力が一気に拡大する。"
+  },
+  money: "フィクサーは「情報」と「人脈」を資産に変えるのが得意。直接的な労働収入よりも、仕組み・紹介・コンサルティング型の収入源との相性が良い傾向にあります。投資においては、感情に流されず分析できる強みがそのまま活きるため、長期的な視点での資産形成に向いています。一方で「自分が動かなくても回る仕組み」を作りすぎて孤立しないよう、信頼できるパートナーと情報を共有することが、資産拡大のスピードを上げるポイントになります。",
+  compatibility: {
+    top: [
+      {code:"SH", name:"心の避難所", comment:"フィクサーの計算高さを、温かく包み込んでくれる最高の相性"},
+      {code:"CN", name:"コネクター", comment:"情報のハブとして、お互いの強みを補完し合える"},
+      {code:"KM", name:"キングメーカー", comment:"同じ支配王国。互いの「裏方気質」を理解し合える"}
+    ],
+    last: {code:"BR", name:"猪突猛進家", comment:"テンポの違いに最初は戸惑うが、刺激を受け合える組み合わせ"}
+  },
+  legendCondition: "LEGEND「運命編纂者」に到達するためには、覚醒ルートの5条件をすべて満たした上で、最終条件をクリアする必要があります。最終条件：自分が関わったことを、誰にも気づかれなくても良いと思えるようになること。フィクサーの真の力は「見えないところで全体を動かす」ことにあります。承認や評価を必要としなくなったとき、あなたの影響力は最大化されます。"
+},
+
+// ============================================================
+KM: {
+  shortDesc: "キングメーカーは、人の魅力や可能性を見抜き、それを最大限に引き出すことに長けたリーダータイプ。自分が前に出るだけでなく、周りの人を「主役」として輝かせることに大きな喜びを感じます。カリスマ性と共感力を兼ね備え、組織やチームをまとめる場面で自然と頼られる存在になるでしょう。",
+  awakening: [
+    "「育てる」目線を持つ：人を評価するだけでなく、その人がどう成長できるかを考える習慣をつける。",
+    "権限を渡す勇気を持つ：すべてを自分で決めず、信頼する人に判断を委ねる場面を増やす。",
+    "感謝を言葉にする：支えてくれる人への感謝を、行動だけでなく言葉で伝える。",
+    "失敗を許容する文化をつくる：チームが安心して挑戦できる空気を、自分から作り出す。",
+    "自分の「王冠」を譲る経験をする：誰かを後継者として育て上げ、舞台を譲る経験をする。"
+  ],
+  darkRoute: {
+    intro: "キングメーカーが孤独や不安を感じているとき、「人を自分の思い通りに動かしたい」という欲求が強くなりやすくなります。本人は「良かれと思って」やっていても、周囲には「支配されている」と感じられてしまうことがあります。",
+    checklist: [
+      "アドバイスのつもりが、いつの間にか「指示」になっていないか",
+      "相手が自分とは違う選択をしたとき、強い不満を感じていないか",
+      "「自分がいないと回らない」という思いが強くなっていないか"
+    ],
+    avoidance: [
+      "相手の選択を、結果が見えなくても一度は信じて任せる",
+      "自分が手を引いても回る仕組みを意識的に作る",
+      "「正しさ」より「相手の納得感」を優先する場面を増やす"
+    ]
+  },
+  love: {
+    attracted: "夢や目標を持っていて、その実現を一緒に喜び合えるタイプ。成長力の高いタイプと特に良い化学反応が起きやすい。",
+    pitfall: "相手の人生やキャリアにまで「プロデュース」したくなってしまうこと。良かれと思ったアドバイスが、相手にはプレッシャーになることがあります。",
+    ideal: "キングメーカーの応援を素直に受け取りつつ、自分の意思もしっかり持っている人。"
+  },
+  work: {
+    goodEnv: "チームビルディング・マネジメント・人材育成に関わる役割。経営者、プロデューサー、コーチ、人事など「人を活かす」立場。",
+    avoidEnv: "成果がすべて個人の数字で評価される、チームへの貢献が見えにくい環境。一人で完結する作業中心の職種は物足りなさを感じやすい。",
+    skill: "傾聴力。話すことが得意な分、相手の話をじっくり受け止める時間を意識的に増やすと、より深い信頼関係を築ける。"
+  },
+  money: "キングメーカーは「人とお金が集まる場」を作る才能があります。直接の販売や労働よりも、チームやプロジェクトを動かす立場で報酬を得るスタイルが向いています。投資においては、応援したい企業や人物に投資する「想い先行型」になりやすいため、感情と分析を分けて判断する仕組みを持つと安定します。人脈を通じた紹介・提携が、思わぬ収入源につながることも多いタイプです。",
+  compatibility: {
+    top: [
+      {code:"AI", name:"オールイン型", comment:"キングメーカーの後押しで、オールイン型は安心して大勝負に出られる"},
+      {code:"UP", name:"未知開拓者", comment:"新しい挑戦を後押しし合える、刺激的な組み合わせ"},
+      {code:"FX", name:"フィクサー", comment:"同じ支配王国。表と裏で連携できる最強タッグ"}
+    ],
+    last: {code:"MC", name:"マスター職人", comment:"スピード感の違いに最初は驚くが、互いの専門性を尊重できる"}
+  },
+  legendCondition: "LEGEND「王冠鋳造者」に到達するためには、覚醒ルートの5条件をすべて満たした上で、最終条件をクリアする必要があります。最終条件：自分が育てた誰かが、自分を超えていくのを心から祝福できること。キングメーカーの真の力は「次の世代を生み出す」ことにあります。自分の影響力を「継承」できたとき、あなたの存在は時代を超えて語られるようになります。"
+},
+
+// ============================================================
+AI: {
+  shortDesc: "オールイン型は、チャンスを前にしたときの判断スピードと度胸が圧倒的なタイプ。リスクを恐れず、「やってみなければわからない」という直感を信じて飛び込む力があります。行動力と支配力の高さが、周囲から見ると「勝負強い人」という印象を作り出しているはずです。",
+  awakening: [
+    "勝算を「言葉」にする：直感だけでなく、なぜその選択をしたのかを人に説明できるようにする。",
+    "負けた時の備えを持つ：全力で挑むことと、最悪の場合に備えることは矛盾しないと理解する。",
+    "仲間を巻き込む：一人で勝負するのではなく、信頼できる人と一緒に挑戦する経験を増やす。",
+    "小さな勝負も大切にする：大きな一発だけでなく、日々の小さな選択にも本気で向き合う。",
+    "「降りる」判断力を磨く：勝負を続けることだけでなく、潮目を見て退く判断もできるようになる。"
+  ],
+  darkRoute: {
+    intro: "オールイン型がうまくいかない時期が続くと、「次こそは」という思いが強くなりすぎて、リスクの大きさを見誤りやすくなります。勝負への熱が、いつの間にか「やめられない」状態に変わってしまうことがあります。",
+    checklist: [
+      "負けを取り返すために、さらに大きな勝負に出ようとしていないか",
+      "周囲から「ちょっと心配」と言われることが増えていないか",
+      "勝負していない時間に、落ち着かない気持ちになっていないか"
+    ],
+    avoidance: [
+      "勝負の前に「ここまでなら大丈夫」というラインを決めておく",
+      "結果を一人で抱え込まず、信頼できる人に共有する",
+      "勝負以外で満足感を得られる時間（趣味・休息）を確保する"
+    ]
+  },
+  love: {
+    attracted: "一緒にいてワクワクできる、刺激的な関係を築けるタイプ。行動力のあるタイプとはスピード感が合いやすい。",
+    pitfall: "関係そのものを「勝負」のように扱ってしまうこと。相手はじっくり関係を築きたいと思っているのに、刺激ばかり求めると噛み合わなくなることがあります。",
+    ideal: "オールイン型の勢いを楽しみながらも、必要なときには落ち着いて受け止めてくれる人。"
+  },
+  work: {
+    goodEnv: "結果がはっきり出る、変化の速い環境。営業、トレーダー、新規事業、スタートアップなど「勝負所」がある職種。",
+    avoidEnv: "変化が少なく、長期的にコツコツ続けることが評価される環境。ルーティン中心の業務は刺激不足になりやすい。",
+    skill: "リスク管理力。勢いだけでなく、データや計画を組み合わせることで、勝負の精度がさらに上がる。"
+  },
+  money: "オールイン型は、チャンスを掴む嗅覚に優れていますが、お金に関しては「波が大きい」タイプです。大きく増やせる可能性がある一方で、同じスピードで減らすリスクもあります。資産形成においては、すべてを一つの勝負に賭けず、一部を「守りの資産」として分けておくことが長期的な安定につながります。直感を信じつつ、検証する仕組みを持つことで、勝負強さがより活きてきます。",
+  compatibility: {
+    top: [
+      {code:"KM", name:"キングメーカー", comment:"キングメーカーの後押しで、安心して大勝負に集中できる"},
+      {code:"ST", name:"裏参謀", comment:"勢いと戦略がかみ合うと、最強のコンビになる"},
+      {code:"BR", name:"猪突猛進家", comment:"同じ行動派。一緒にいると最高に楽しい"}
+    ],
+    last: {code:"MC", name:"マスター職人", comment:"テンポの違いはあるが、刺激と安定のバランスが取れる"}
+  },
+  legendCondition: "LEGEND「運命征服者」に到達するためには、覚醒ルートの5条件をすべて満たした上で、最終条件をクリアする必要があります。最終条件：負ける可能性がある勝負にこそ、本当の価値を見出せるようになること。オールイン型の真の力は「不確実性を楽しむ」ことにあります。結果だけでなく挑戦そのものに意味を見出せたとき、あなたの勝負はどんな結果でも「運命を切り開く一手」になります。"
+},
+
+// ============================================================
+ST: {
+  shortDesc: "裏参謀は、状況全体を俯瞰し、何手も先を見据えて最適な一手を導き出す戦略家タイプ。感情に流されず、データや状況を冷静に分析する力に優れています。周囲からは「いつも一歩先を考えている人」として、重要な決定の場で意見を求められることが多いはずです。",
+  awakening: [
+    "考えを「共有」する：自分の中で完結させず、考えた戦略を仲間に伝えて一緒に動く経験を増やす。",
+    "実行のスピードを上げる：完璧な計画を待つより、7割の精度で動き出す勇気を持つ。",
+    "感情のデータも取り入れる：人の気持ちも「変数」として戦略に組み込む。",
+    "小さな勝利を可視化する：大きな勝負だけでなく、日々の小さな成果も認識する。",
+    "「教える」側に回る：自分の考え方を、後進に伝える機会を持つ。"
+  ],
+  darkRoute: {
+    intro: "裏参謀が孤立していたり、行動に踏み出せない期間が続くと、「考えるだけで満足してしまう」状態に陥りやすくなります。完璧な戦略を追い求めるあまり、実行が後回しになってしまうことがあります。",
+    checklist: [
+      "「もっと情報がないと決められない」が口癖になっていないか",
+      "計画を立てることが目的になり、実行を避けていないか",
+      "他人の行動を分析するばかりで、自分は動いていないと感じていないか"
+    ],
+    avoidance: [
+      "「とりあえずやってみる」を意識的に増やす",
+      "計画には必ず「実行日」をセットで決める",
+      "信頼できる人に、考えを話して背中を押してもらう"
+    ]
+  },
+  love: {
+    attracted: "落ち着いていて、じっくり関係を築けるタイプ。分析力の高いタイプとは深い会話が楽しめる。",
+    pitfall: "関係の先まで考えすぎて、今この瞬間の感情を後回しにしてしまうこと。",
+    ideal: "裏参謀の思考を尊重しつつ、「今すぐ動こう」と背中を押してくれる人。"
+  },
+  work: {
+    goodEnv: "戦略立案・企画・リサーチ系の職種。経営企画、マーケティング戦略、軍事・防災系のシミュレーションなど「未来を読む」仕事。",
+    avoidEnv: "即時対応が求められる、考える時間がほとんどない現場。",
+    skill: "発信力。考えた戦略を、自分の言葉で人に伝える練習をすると影響力が増す。"
+  },
+  money: "裏参謀は、情報収集と分析の精度が高いため、長期的な資産運用に強い適性があります。市場の動きを読み、感情に左右されない判断ができる一方、「もっと良いタイミングがあるはず」と考えすぎて行動が遅れることも。資産形成では、ルールを決めたら淡々と実行する仕組み化が効果的です。情報を独り占めせず、信頼できる相手と共有することで、思考の精度もさらに上がります。",
+  compatibility: {
+    top: [
+      {code:"AI", name:"オールイン型", comment:"戦略と勢いの最強タッグ。お互いの弱点を補い合える"},
+      {code:"DB", name:"データ脳", comment:"分析と戦略、知的好奇心で深く繋がれる"},
+      {code:"FX", name:"フィクサー", comment:"同じ支配王国。静かな信頼関係を築きやすい"}
+    ],
+    last: {code:"SR", name:"スター体質", comment:"表現方法は違うが、互いの強みを認め合える"}
+  },
+  legendCondition: "LEGEND「千局観測者」に到達するためには、覚醒ルートの5条件をすべて満たした上で、最終条件をクリアする必要があります。最終条件：間違った一手を打つことを、恐れなくなること。裏参謀の真の力は「考え続ける」ことではなく「考えた上で動く」ことにあります。不完全な状況でも一歩を踏み出せるようになったとき、あなたの戦略は現実を動かす力を持ちます。"
+},
+
+// ============================================================
+SH: {
+  shortDesc: "心の避難所は、誰かが困っているときに自然と寄り添い、安心感を届けられる存在。優しい眼差しと包容力で、周囲の人が「ここにいると安心する」と感じる空気を作り出します。共感力と守護力の高さが、知らず知らずのうちに多くの人の心の支えになっているはずです。",
+  awakening: [
+    "自分自身も労わる：誰かを支えるのと同じくらい、自分への優しさも持つ。",
+    "断る選択肢を持つ：すべてのお願いに応えなくても良いと知る。",
+    "弱さを見せる：いつも支える側だけでなく、時には支えられる経験をする。",
+    "小さな自己主張をする：自分の気持ちや希望を、相手に伝える練習をする。",
+    "「与える」と「与えすぎる」の境界線を見つける：自分が心地よくいられる範囲を知る。"
+  ],
+  darkRoute: {
+    intro: "心の避難所が、自分のことを後回しにし続けると、「与えること」が当たり前になり、心も体も消耗してしまうことがあります。本人は「これが自分の役割」と思っていても、周囲はそれに気づきにくいものです。",
+    checklist: [
+      "自分の気持ちを話す機会が、ほとんどなくなっていないか",
+      "「自分が我慢すれば済む」と思うことが増えていないか",
+      "誰かに頼ることに、強い抵抗を感じていないか"
+    ],
+    avoidance: [
+      "自分の気持ちを話せる相手を、最低一人は持つ",
+      "「ありがとう」を受け取る練習をする（遠慮せず受け取る）",
+      "予定に「自分のための時間」を先に確保する"
+    ]
+  },
+  love: {
+    attracted: "誠実で、心の避難所の優しさに気づき、ちゃんと感謝を伝えてくれる人。守護力が高めのタイプとは深い安心感を築ける。",
+    pitfall: "相手のすべてを受け入れようとして、自分の希望を後回しにしてしまうこと。",
+    ideal: "心の避難所が「支える側」だけでなく「支えられる側」にもなれるよう、自然に気遣ってくれる人。"
+  },
+  work: {
+    goodEnv: "people-careに関わる仕事。カウンセラー、看護・福祉、教育、人事(労務)、コミュニティ運営など「人を支える」役割。",
+    avoidEnv: "常に競争・評価にさらされ、人の感情を考慮する余裕がない環境。",
+    skill: "発信力・自己開示。自分の気持ちや考えを表に出す経験を増やすと、より対等な関係性が築ける。"
+  },
+  money: "心の避難所は、お金よりも「人との関係」を大切にする傾向があり、つい人のために出費してしまうことがあります。資産形成においては、まず自分のための予算を先に確保する「先取り」の仕組みが効果的です。誠実さや信頼を大切にする性質は、長期的な人間関係を通じた仕事や紹介に繋がりやすく、結果的に安定した収入基盤を作ることができます。",
+  compatibility: {
+    top: [
+      {code:"FX", name:"フィクサー", comment:"フィクサーの緊張を、優しく解きほぐせる最高の相性"},
+      {code:"IG", name:"鉄壁ガード", comment:"同じ共鳴王国。互いを支え合う安定した関係"},
+      {code:"MC", name:"マスター職人", comment:"静かな時間を一緒に過ごせる、心地よい組み合わせ"}
+    ],
+    last: {code:"SR", name:"スター体質", comment:"ペースの違いはあるが、心の避難所の優しさがスターを支える"}
+  },
+  legendCondition: "LEGEND「万灯の聖人」に到達するためには、覚醒ルートの5条件をすべて満たした上で、最終条件をクリアする必要があります。最終条件：自分自身にも、誰かにかけているのと同じ優しさを向けられるようになること。心の避難所の真の力は「他者を照らす」ことだけでなく「自分も照らされていい」と知ることにあります。そのとき、あなたの優しさは無理なく周囲に広がっていきます。"
+},
+
+// ============================================================
+CN: {
+  shortDesc: "コネクターは、人と人、情報と情報をつなぎ、新しい関係性を生み出すことが得意なタイプ。誰とでも自然に打ち解けられる人懐っこさと、ネットワークを広げる行動力を兼ね備えています。あなたがいることで、これまで繋がらなかった人やアイデアが結びつき、新しい動きが生まれることが多いはずです。",
+  awakening: [
+    "「質」を意識する：繋がりの数だけでなく、深い関係性をいくつか育てる。",
+    "自分の意見を持つ：人と人をつなぐだけでなく、自分自身の考えも発信する。",
+    "フォローアップを大切にする：紹介した後も、関係がどう発展したかを気にかける。",
+    "断る練習をする：すべての繋がりに応えようとせず、優先順位をつける。",
+    "「繋ぐ理由」を明確にする：なぜこの2人/組織を繋ぐのか、目的を意識する。"
+  ],
+  darkRoute: {
+    intro: "コネクターが、誰からも好かれたいという気持ちが強くなりすぎると、それぞれの相手に合わせて言うことを変えてしまい、「結局どっちの味方なの？」と思われてしまうことがあります。",
+    checklist: [
+      "相手によって、言うことや態度を大きく変えていないか",
+      "「みんなと仲良くしたい」が、自分の意見を言えない理由になっていないか",
+      "繋いだ後の関係に、責任を感じすぎていないか"
+    ],
+    avoidance: [
+      "誰に対しても、自分の意見の「軸」は変えないようにする",
+      "全員と仲良くすることより、信頼できる関係を優先する",
+      "繋いだ後は、当事者同士に委ねる勇気を持つ"
+    ]
+  },
+  love: {
+    attracted: "オープンで、コネクターの社交的な一面も自然に受け入れてくれる人。コミュニケーション能力の高いタイプと相性が良い。",
+    pitfall: "誰とでも仲良くする姿勢が、パートナーに「不安」を感じさせてしまうこと。",
+    ideal: "コネクターの社交性を信頼しつつ、二人だけの時間も大切にしてくれる人。"
+  },
+  work: {
+    goodEnv: "人と人、組織と組織をつなぐ仕事。広報、パートナーシップ構築、イベント企画、コミュニティマネージャーなど。",
+    avoidEnv: "一人で黙々と作業を続ける、対人コミュニケーションが少ない環境。",
+    skill: "深く関わる力。広く浅い関係だけでなく、一部の人とは深い信頼関係を築く意識を持つ。"
+  },
+  money: "コネクターは、人脈そのものが資産になるタイプです。紹介や口コミから仕事やチャンスが生まれやすく、人との関係を大切にすることが収入にも繋がります。一方で、付き合いの場での出費がかさみやすい傾向もあるため、「人との時間」と「お金の使い方」のバランスを意識すると、より安定します。",
+  compatibility: {
+    top: [
+      {code:"FX", name:"フィクサー", comment:"情報のハブとして、お互いの強みを補完し合える"},
+      {code:"IA", name:"アイデア中毒", comment:"コネクターが繋いだ縁から、新しいアイデアが生まれる"},
+      {code:"SR", name:"スター体質", comment:"人が集まる場を一緒に作れる、賑やかな組み合わせ"}
+    ],
+    last: {code:"MC", name:"マスター職人", comment:"ペースは違うが、コネクターが職人の魅力を広めてくれる"}
+  },
+  legendCondition: "LEGEND「世界結節点」に到達するためには、覚醒ルートの5条件をすべて満たした上で、最終条件をクリアする必要があります。最終条件：自分が「ハブ」であることを誇りに思い、それを継続できること。コネクターの真の力は「繋ぐこと」そのものに価値があると気づくことにあります。繋がりの先で何が生まれるかを楽しめるようになったとき、あなたは世界中の人や情報が集まる結節点になります。"
+},
+
+// ============================================================
+HH: {
+  shortDesc: "人類攻略型は、人の心理や本音を読み取ることに優れた、天才的な戦略家タイプ。表情や言葉の裏にある気持ちを察知し、駆け引きを楽しむ余裕があります。共感力と分析力を組み合わせることで、交渉や調整の場面で「この人には敵わない」と思わせる存在になるでしょう。",
+  awakening: [
+    "読んだ心を「活かす」：相手の本音を理解した上で、その人が本当に望む形で関わる。",
+    "自分の本音も見せる：駆け引きだけでなく、誠実な部分も相手に開く。",
+    "長期的な関係を築く：一度の交渉だけでなく、継続的な信頼関係を意識する。",
+    "「勝ち負け」から離れる：すべての対話を駆け引きとして見ず、対等な関係を楽しむ。",
+    "感性を言語化する：読み取った人の心理を、誰かに説明できる形にする。"
+  ],
+  darkRoute: {
+    intro: "人類攻略型が、人との距離感に疲れているとき、「本音を見せない」ことが当たり前になり、誰からも本当の自分を理解されていないという感覚に陥ることがあります。",
+    checklist: [
+      "誰に対しても、少し「キャラ」を作っていないか",
+      "本音で話せる相手が、ほとんどいないと感じていないか",
+      "相手の反応を予測することに、疲れを感じていないか"
+    ],
+    avoidance: [
+      "信頼できる相手には、駆け引きなしで接する時間を作る",
+      "「読まれること」を怖がらず、自分から本音を開示してみる",
+      "一人になれる時間を確保し、心理戦から離れる時間を作る"
+    ]
+  },
+  love: {
+    attracted: "誠実で、人類攻略型の洞察力を「怖い」ではなく「すごい」と受け止めてくれる人。",
+    pitfall: "相手の気持ちを先読みしすぎて、自分から本音を伝えるタイミングを逃してしまうこと。",
+    ideal: "人類攻略型の心理戦モードを、優しく解除させてくれる人。"
+  },
+  work: {
+    goodEnv: "交渉・調整・カウンセリングなど、人の心理を扱う仕事。営業、人事、心理職、外交的な役割。",
+    avoidEnv: "人との関わりが少なく、ルーティン作業が中心の環境。",
+    skill: "自己開示力。読むだけでなく、自分から見せることで信頼関係がより深まる。"
+  },
+  money: "人類攻略型は、交渉力の高さを活かして、有利な条件を引き出すことが得意です。一方で、相手の心理を読みすぎて「気を遣いすぎる」ことが、ビジネスチャンスを逃す原因になることもあります。お金の話を、駆け引きではなく「対等な対話」として扱えるようになると、より良い条件で取引できるようになります。",
+  compatibility: {
+    top: [
+      {code:"IG", name:"鉄壁ガード", comment:"同じ共鳴王国。読み合いではなく、信頼で繋がれる"},
+      {code:"DB", name:"データ脳", comment:"心理と論理、両方の視点で深く理解し合える"},
+      {code:"RB", name:"常識破壊者", comment:"型にはまらない発想に、刺激を受け合える"}
+    ],
+    last: {code:"LG", name:"レベル上げ狂", comment:"スタイルは違うが、互いの努力を認め合える"}
+  },
+  legendCondition: "LEGEND「心象解読者」に到達するためには、覚醒ルートの5条件をすべて満たした上で、最終条件をクリアする必要があります。最終条件：相手の心を読むことと、自分の心を見せることを、同じくらい大切にできるようになること。人類攻略型の真の力は「理解する」ことだけでなく「理解される」ことを受け入れることにあります。それができたとき、あなたの洞察力は人を遠ざけるのではなく、深く繋げる力になります。"
+},
+
+// ============================================================
+IG: {
+  shortDesc: "鉄壁ガードは、どんな状況でも仲間を守り抜く、頼れる盾のような存在。責任感が強く、堅実に物事をやり遂げる姿勢が、周囲からの信頼を集めます。守護力と成長力を兼ね備え、目立つ場所ではなくとも「この人がいるから安心できる」と言われる、チームの土台を担うタイプです。",
+  awakening: [
+    "守る範囲を広げる：身近な人だけでなく、より大きな単位（組織・地域・社会）を意識する。",
+    "「攻め」も経験する：守るだけでなく、時には自分から動いて新しいことに挑戦する。",
+    "頼ることを覚える：自分が守られる側になる経験も大切にする。",
+    "変化を受け入れる：堅実さを保ちながらも、新しい方法やアイデアを取り入れる柔軟さを持つ。",
+    "自分の限界を伝える：無理を続けず、サポートが必要なときは周囲に伝える。"
+  ],
+  darkRoute: {
+    intro: "鉄壁ガードが、守るべきものが多すぎたり、孤独に責任を抱え込みすぎると、「自分の中に閉じこもる」ようになり、周囲との関わりを避けてしまうことがあります。",
+    checklist: [
+      "「自分一人で何とかしなければ」という思いが強くなっていないか",
+      "新しいことを始めるのが、以前より億劫になっていないか",
+      "周囲との会話が、必要最低限になっていないか"
+    ],
+    avoidance: [
+      "小さなことでも、誰かに相談する習慣をつける",
+      "「守る」以外の自分の役割や楽しみを持つ",
+      "新しい環境や人との接点を、意識的に作る"
+    ]
+  },
+  love: {
+    attracted: "誠実で、鉄壁ガードの堅実さを安心できると感じてくれる人。",
+    pitfall: "自分の気持ちを表現するのが苦手で、誤解されてしまうこと。",
+    ideal: "鉄壁ガードの守る姿勢に感謝しつつ、たまには「守られる側」にしてくれる人。"
+  },
+  work: {
+    goodEnv: "品質管理、安全管理、バックオフィス、長期プロジェクトの管理など「土台を支える」仕事。",
+    avoidEnv: "短期的な成果やスピードばかりが求められる、変化の激しい環境。",
+    skill: "発信力。黒子としての貢献を、適切にアピールすることで評価につながる。"
+  },
+  money: "鉄壁ガードは、堅実にコツコツと資産を積み上げるタイプです。リスクの高い投資よりも、安定した方法での資産形成が向いています。一方で、慎重すぎてチャンスを逃すこともあるため、信頼できる人のアドバイスを取り入れることで、堅実さを保ちながら一歩踏み出すことができます。",
+  compatibility: {
+    top: [
+      {code:"SH", name:"心の避難所", comment:"同じ共鳴王国。互いを支え合う最強の安定コンビ"},
+      {code:"MC", name:"マスター職人", comment:"同じ成長王国に近い丁寧さを持ち、深く信頼し合える"},
+      {code:"HH", name:"人類攻略型", comment:"読み合いではなく、自然な信頼関係を築ける"}
+    ],
+    last: {code:"AI", name:"オールイン型", comment:"スタイルは正反対だが、互いに無いものを持っている"}
+  },
+  legendCondition: "LEGEND「永久城塞」に到達するためには、覚醒ルートの5条件をすべて満たした上で、最終条件をクリアする必要があります。最終条件：守ることと、自分自身を犠牲にすることは違うと理解すること。鉄壁ガードの真の力は「揺らがないこと」にありますが、それは「無理をすること」ではありません。自分を満たした上で守ることができたとき、あなたの存在はどんな状況でも崩れない「城塞」になります。"
+},
+
+// ============================================================
+UP: {
+  shortDesc: "未知開拓者は、新しい世界や経験に対する好奇心が止まらない冒険家タイプ。リュックを背負って、まだ見たことのない景色を探しに行くような行動力があります。創造力と行動力の高さが、周囲からは「いつも新しいことを始めている人」という印象を作っているはずです。",
+  awakening: [
+    "経験を「形」にする：旅や挑戦の経験を、誰かに伝える・記録する習慣をつける。",
+    "一つのことを深める：新しいことを始めるだけでなく、時には一つを掘り続ける経験をする。",
+    "仲間と冒険する：一人での挑戦だけでなく、誰かと一緒に新しい世界に踏み出す。",
+    "「帰る場所」を持つ：自由に動き回る一方で、戻れる安心できる場所や関係を持つ。",
+    "次の世代に経験を渡す：自分が見てきた世界を、これから挑戦する人に伝える。"
+  ],
+  darkRoute: {
+    intro: "未知開拓者が、何かに本気で向き合うことへの不安が強くなると、「新しいことを始める」ことだけが目的になり、何も結果として残らないまま次々と移っていく状態になることがあります。",
+    checklist: [
+      "始めたことを最後までやり切る前に、次のことに目が向いていないか",
+      "「飽きた」という理由で、関係や挑戦を手放すことが増えていないか",
+      "落ち着いた場所や関係に、居心地の悪さを感じていないか"
+    ],
+    avoidance: [
+      "一つの挑戦に「期限」を決めて、そこまでは続けてみる",
+      "新しい場所に行く前に、今いる場所での経験を振り返る",
+      "「帰る場所」となる人や環境を、大切にする"
+    ]
+  },
+  love: {
+    attracted: "未知開拓者の自由な生き方を尊重し、一緒に新しいことを楽しめる人。",
+    pitfall: "関係が安定してくると、刺激を求めて他に目が向いてしまうこと。",
+    ideal: "未知開拓者の冒険心を応援しながら、「帰りを待っている」と思える存在になってくれる人。"
+  },
+  work: {
+    goodEnv: "新規事業、海外関連の仕事、フリーランス、企画職など「新しい挑戦」が前提になる環境。",
+    avoidEnv: "決まったルーティンを、長期間変えずに続ける環境。",
+    skill: "継続力。新しいことを始める力に、「続ける」力が加わると、挑戦が成果に繋がりやすくなる。"
+  },
+  money: "未知開拓者は、経験への投資を惜しまない傾向があります。新しいチャンスに飛び込む力は資産形成にもプラスですが、計画性が伴わないと「お金が貯まらない冒険家」になりがちです。固定費を低く抑え、「いつでも動ける」状態を保ちながら、一部は長期的な資産として積み立てる仕組みを持つと、自由さと安定を両立できます。",
+  compatibility: {
+    top: [
+      {code:"KM", name:"キングメーカー", comment:"新しい挑戦を、キングメーカーが後押ししてくれる"},
+      {code:"RB", name:"常識破壊者", comment:"同じ創造王国。型にはまらない者同士、刺激し合える"},
+      {code:"IA", name:"アイデア中毒", comment:"新しい発想と新しい経験が、互いを高め合う"}
+    ],
+    last: {code:"IG", name:"鉄壁ガード", comment:"スタイルは正反対だが、未知開拓者の「帰る場所」になれる"}
+  },
+  legendCondition: "LEGEND「地平線の先導者」に到達するためには、覚醒ルートの5条件をすべて満たした上で、最終条件をクリアする必要があります。最終条件：誰も見たことのない場所に辿り着いたとき、そこに「誰かを連れて行きたい」と思えるようになること。未知開拓者の真の力は「最初に行く」ことだけでなく「道を作る」ことにあります。あなたが切り拓いた道に、誰かが続けるようになったとき、その地平線はみんなのものになります。"
+},
+
+// ============================================================
+SR: {
+  shortDesc: "スター体質は、いるだけで周囲を明るくし、自然と注目を集めるムードメーカータイプ。表現力が豊かで、人を楽しませることに喜びを感じます。創造力と支配力の組み合わせが、舞台の上でも日常の中でも「この人がいると場が盛り上がる」という空気を作り出しているはずです。",
+  awakening: [
+    "見られることの「目的」を持つ：注目されること自体ではなく、何を届けたいかを意識する。",
+    "舞台裏も大切にする：表に出る時間だけでなく、準備や裏方の時間にも価値を見出す。",
+    "他の人にも光を当てる：自分が主役の場だけでなく、誰かを輝かせる側に回る経験をする。",
+    "評価されない時間に向き合う：注目を浴びない時間でも、自分の価値を保てるようにする。",
+    "長く続けられる表現方法を見つける：一瞬の輝きだけでなく、続けられるスタイルを育てる。"
+  ],
+  darkRoute: {
+    intro: "スター体質が、注目や評価が得られない時期が続くと、「見られていないと自分には価値がない」という感覚に陥りやすくなります。承認を求める気持ちが強くなりすぎると、周囲には「常に構ってほしい人」という印象を与えてしまうことがあります。",
+    checklist: [
+      "SNSの反応が気になって、何度も確認してしまっていないか",
+      "注目されていないと感じると、不安や焦りが強くなっていないか",
+      "「すごい」と言われるための行動が増えていないか"
+    ],
+    avoidance: [
+      "誰にも見せない、自分のためだけの時間や活動を持つ",
+      "他人の評価ではなく、自分自身の満足度で物事を判断する練習をする",
+      "信頼できる人には、輝いていない自分も見せる"
+    ]
+  },
+  love: {
+    attracted: "スター体質の魅力を素直に楽しんでくれる、おおらかな人。",
+    pitfall: "常に注目されたい気持ちが、二人の時間でも続いてしまうこと。",
+    ideal: "スター体質が輝いているときも、輝いていないときも、変わらず大切にしてくれる人。"
+  },
+  work: {
+    goodEnv: "表現や発信が中心の仕事。エンターテイメント、講師、インフルエンサー、営業のフロント業務など。",
+    avoidEnv: "成果が表に出にくく、評価される機会が少ない環境。",
+    skill: "継続力。一時的な注目だけでなく、長期的にファンや支持者を育てる視点を持つ。"
+  },
+  money: "スター体質は、自分自身が「ブランド」になれる強みを持っています。表現や発信を通じた収入源との相性が良い一方、見栄や注目のための出費がかさみやすい傾向も。長期的に活動を続けるためには、「見せるためのお金」と「将来のためのお金」を分けて管理することが、安定した活躍に繋がります。",
+  compatibility: {
+    top: [
+      {code:"CN", name:"コネクター", comment:"スターの周りに人を集めてくれる、最高のパートナー"},
+      {code:"IA", name:"アイデア中毒", comment:"同じ創造王国。新しい表現を一緒に生み出せる"},
+      {code:"KM", name:"キングメーカー", comment:"スターの魅力を、さらに大きな舞台へ導いてくれる"}
+    ],
+    last: {code:"SH", name:"心の避難所", comment:"ペースは違うが、スターの本音を受け止めてくれる存在"}
+  },
+  legendCondition: "LEGEND「時代の象徴」に到達するためには、覚醒ルートの5条件をすべて満たした上で、最終条件をクリアする必要があります。最終条件：誰も見ていない瞬間にも、変わらず輝けるようになること。スター体質の真の力は「見られること」ではなく「在り方そのもの」にあります。注目がなくても自分らしくいられるようになったとき、あなたの輝きは一時的なものではなく、時代を象徴する存在になります。"
+},
+
+// ============================================================
+IA: {
+  shortDesc: "アイデア中毒は、次々と新しい発想が浮かび、それを形にすることに喜びを感じる発明家タイプ。創造力と分析力を組み合わせ、誰も思いつかなかった視点で物事を捉える力があります。あなたの頭の中は、常に新しいプロジェクトやアイデアのアイデアで溢れているはずです。",
+  awakening: [
+    "アイデアを「完成」させる：思いつくだけでなく、一つを最後まで形にする経験を積む。",
+    "他者の力を借りる：すべてを自分で実現しようとせず、得意な人と協力する。",
+    "フィードバックを受け取る：アイデアへの意見を、攻撃ではなく成長の材料として受け止める。",
+    "優先順位をつける：すべてのアイデアを追わず、今集中するものを選ぶ。",
+    "アイデアの「種」を共有する：自分が形にできなくても、誰かに託すという選択肢を持つ。"
+  ],
+  darkRoute: {
+    intro: "アイデア中毒が、新しい発想を生み出すこと自体が目的になると、「考えるだけで満足してしまい、何も実現しない」状態に陥りやすくなります。本人は楽しんでいても、周囲からは「結局何も形にならない人」と見られてしまうことがあります。",
+    checklist: [
+      "新しいアイデアを思いついた時点で、満足してしまっていないか",
+      "一つのプロジェクトが終わる前に、次のアイデアに気持ちが向いていないか",
+      "「いつかやる」と言ったまま、進んでいないことが増えていないか"
+    ],
+    avoidance: [
+      "アイデアを「思いつく」「形にする」を分けて考える",
+      "一つのプロジェクトに、小さくても締め切りを設定する",
+      "完成させる力を持つ人とパートナーシップを組む"
+    ]
+  },
+  love: {
+    attracted: "アイデア中毒の発想を面白がってくれる、知的好奇心のある人。",
+    pitfall: "頭の中が常に新しいことでいっぱいで、相手との「今」に集中できなくなること。",
+    ideal: "アイデア中毒の発想を一緒に楽しみながら、地に足をつけさせてくれる人。"
+  },
+  work: {
+    goodEnv: "企画・開発・研究など、新しいものを生み出す仕事。プロダクト開発、研究職、クリエイティブディレクターなど。",
+    avoidEnv: "決まった手順を、変化なく繰り返す環境。",
+    skill: "実行力。アイデアを形にする最後の一歩を、自分自身で踏み出す力を育てる。"
+  },
+  money: "アイデア中毒は、新しい市場やニーズを見つける力に優れています。一方で、アイデアへの投資（学習・ツール・実験）に出費しがちで、形になる前にお金が出ていくことも。「実験予算」をあらかじめ決めておくことで、創造性を保ちながら資産も守ることができます。形にできたアイデアは、知的財産として長期的な収入源になる可能性も持っています。",
+  compatibility: {
+    top: [
+      {code:"RB", name:"常識破壊者", comment:"同じ創造王国。発想の自由さで深く共鳴できる"},
+      {code:"DB", name:"データ脳", comment:"アイデアを、データ脳が現実的な形に整えてくれる"},
+      {code:"CN", name:"コネクター", comment:"アイデアを、コネクターが必要な人に繋いでくれる"}
+    ],
+    last: {code:"IG", name:"鉄壁ガード", comment:"スタイルは違うが、アイデアの実現を地道に支えてくれる"}
+  },
+  legendCondition: "LEGEND「世界創造主」に到達するためには、覚醒ルートの5条件をすべて満たした上で、最終条件をクリアする必要があります。最終条件：一つのアイデアを、誰かの人生に影響を与える形まで届けること。アイデア中毒の真の力は「思いつく」ことではなく「世界に存在させる」ことにあります。一つでも形にしきった経験を持てたとき、あなたのアイデアは単なる思いつきではなく、世界を作る種になります。"
+},
+
+// ============================================================
+RB: {
+  shortDesc: "常識破壊者は、「当たり前」とされていることに疑問を持ち、新しい価値観を生み出す革命家タイプ。批判を恐れず、自分が正しいと思うことに挑戦する強さがあります。創造力と支配力が組み合わさることで、既存の枠組みを変えるような大きな影響力を発揮することがあるでしょう。",
+  awakening: [
+    "「壊す」と「創る」をセットにする：既存のものを否定するだけでなく、代わりとなる新しい形を提示する。",
+    "理解者を増やす：一人で戦うのではなく、考えに共感する仲間を見つける。",
+    "伝え方を磨く：正しさだけでなく、伝わり方も意識する。",
+    "既存のものへの敬意も持つ：批判する対象にも、これまでの背景や価値があったことを理解する。",
+    "孤立を選ばない：理解されないことを恐れず、それでも繋がろうとする姿勢を持つ。"
+  ],
+  darkRoute: {
+    intro: "常識破壊者が、自分の考えが理解されない経験を重ねると、「どうせ誰にも分かってもらえない」と感じ、一人で孤立してしまうことがあります。本人は「自分の道を行くだけ」と思っていても、孤独感が強くなっていくことがあります。",
+    checklist: [
+      "「みんな間違っている」という気持ちが、強くなっていないか",
+      "誰かに自分の考えを話すことを、最初から諭めていないか",
+      "周囲との違いを、「分かってもらえなくていい」と切り離していないか"
+    ],
+    avoidance: [
+      "考えが違う人にも、最初から壁を作らず話してみる",
+      "自分の考えを、一人でも理解してくれる人を大切にする",
+      "「正しさ」よりも「繋がり」を選ぶ場面を作る"
+    ]
+  },
+  love: {
+    attracted: "常識破壊者の考え方を面白がり、否定せずに受け止めてくれる人。",
+    pitfall: "自分の考えを通すことに集中しすぎて、相手の価値観を軽視してしまうこと。",
+    ideal: "常識破壊者の個性を尊重しながら、時に「それは違うかも」と率直に伝えてくれる人。"
+  },
+  work: {
+    goodEnv: "新しい価値観や仕組みを作る仕事。スタートアップ、アート、社会変革に関わる活動など。",
+    avoidEnv: "前例や規則を厳格に守ることが求められる、変化を許容しない環境。",
+    skill: "対話力。一方的に伝えるだけでなく、相手の意見も受け止めながら進める力を育てる。"
+  },
+  money: "常識破壊者は、既存のビジネスモデルにとらわれない発想で、新しい収益の形を生み出す可能性を持っています。一方で、型破りなアイデアは理解されるまで時間がかかることも多く、初期は収入が不安定になりやすい傾向も。長期的なビジョンを持ちながら、生活の基盤となる収入源を別に確保しておくことで、思い切った挑戦がしやすくなります。",
+  compatibility: {
+    top: [
+      {code:"UP", name:"未知開拓者", comment:"同じ創造王国。型にはまらない者同士、深く理解し合える"},
+      {code:"IA", name:"アイデア中毒", comment:"発想の自由さで共鳴し、新しいものを一緒に生み出せる"},
+      {code:"FX", name:"フィクサー", comment:"常識破壊者のアイデアを、フィクサーが現実に落とし込む"}
+    ],
+    last: {code:"IG", name:"鉄壁ガード", comment:"価値観は違うが、互いに無いものを補い合える"}
+  },
+  legendCondition: "LEGEND「法則改変者」に到達するためには、覚醒ルートの5条件をすべて満たした上で、最終条件をクリアする必要があります。最終条件：自分が壊した「当たり前」の先に、新しい「当たり前」を残すこと。常識破壊者の真の力は「壊す」ことではなく「次の基準を作る」ことにあります。あなたが作った新しい価値観が、誰かにとっての「当たり前」になったとき、世界の法則そのものが変わります。"
+},
+
+// ============================================================
+LG: {
+  shortDesc: "レベル上げ狂は、コツコツと努力を積み重ね、着実に成長していく天才タイプ。一度始めたことを継続する力が異常に高く、地道な積み重ねを楽しむことができます。成長力と行動力の高さが、長期的に見ると誰よりも大きな成果を生み出す原動力になっているはずです。",
+  awakening: [
+    "目標を「言葉」にする：何のために積み重ねているのか、ゴールを明確にする。",
+    "成果を振り返る：積み重ねた結果を、定期的に確認し、自分の成長を実感する。",
+    "人に頼ることを覚える：自分のペースだけでなく、他者の力を借りる場面も作る。",
+    "新しい挑戦に踏み出す：積み重ねるだけでなく、時には未知の領域にも挑戦する。",
+    "成長の過程を共有する：自分の努力を、誰かに伝えたり教えたりする経験をする。"
+  ],
+  darkRoute: {
+    intro: "レベル上げ狂が、努力すること自体が目的になると、「成長していないと不安」という感覚が強くなり、休むことに罪悪感を感じてしまうことがあります。終わりのない努力に、いつの間にか疲弊してしまうことも。",
+    checklist: [
+      "休むことに、強い抵抗や罪悪感を感じていないか",
+      "「もっとやらなければ」という気持ちが、常に頭の中にないか",
+      "成果が出ていても、満足できずに次の課題を探していないか"
+    ],
+    avoidance: [
+      "「今日はやらない」と決める日を、意識的に作る",
+      "積み重ねた成果を、誰かと一緒に祝う",
+      "努力以外の時間（休息・楽しみ）にも価値を見出す"
+    ]
+  },
+  love: {
+    attracted: "レベル上げ狂の努力する姿勢を、認めて応援してくれる人。",
+    pitfall: "自分の成長に集中しすぎて、関係を育てる時間を後回しにしてしまうこと。",
+    ideal: "レベル上げ狂の頑張りを認めつつ、「休んでもいいよ」と言ってくれる人。"
+  },
+  work: {
+    goodEnv: "専門性を積み上げていく仕事。研究、技術職、スポーツ、資格を活かす専門職など。",
+    avoidEnv: "成長や成果が見えにくく、努力が評価されにくい環境。",
+    skill: "発信力。積み上げてきたものを、周囲にアピールする力を持つと、より評価されやすくなる。"
+  },
+  money: "レベル上げ狂は、コツコツとした積み立てや、長期的な資産形成に最も向いているタイプです。一度仕組みを作れば、着実に継続できる力があります。一方で、努力に対するリターンを焦って求めず、長期的な視点を持つことが大切です。スキルや専門性への投資は、将来的に大きな資産になります。",
+  compatibility: {
+    top: [
+      {code:"MC", name:"マスター職人", comment:"同じ成長王国。お互いの努力を尊重し合える"},
+      {code:"IG", name:"鉄壁ガード", comment:"堅実さで深く繋がれる、安定した関係"},
+      {code:"DB", name:"データ脳", comment:"努力の方向性を、データ脳が示してくれる"}
+    ],
+    last: {code:"SR", name:"スター体質", comment:"ペースは違うが、レベル上げ狂の努力をスターが応援してくれる"}
+  },
+  legendCondition: "LEGEND「無限到達者」に到達するためには、覚醒ルートの5条件をすべて満たした上で、最終条件をクリアする必要があります。最終条件：努力することと、自分を大切にすることが、矛盾しないと心から思えるようになること。レベル上げ狂の真の力は「続けること」にありますが、それは「無限に走り続けること」ではありません。休むことも成長の一部だと受け入れたとき、あなたの努力は本当の意味で「無限」になります。"
+},
+
+// ============================================================
+MC: {
+  shortDesc: "マスター職人は、一つのことをじっくりと極めていく職人気質のタイプ。集中力が高く、細部までこだわり抜く姿勢が、確かな実力として周囲に伝わります。成長力と分析力を兼ね備え、「この人に任せれば間違いない」という信頼を積み重ねていくでしょう。",
+  awakening: [
+    "成果を「見せる」：完成したものを、自分の中だけでなく外に発信する。",
+    "他分野とつながる：自分の専門領域だけでなく、他の分野との接点を持つ。",
+    "教える経験をする：技術や知識を、誰かに伝える機会を作る。",
+    "完璧でなくても出す：100%を待たず、80%でも一度世に出す経験をする。",
+    "新しい技術を学ぶ：今のスキルに満足せず、新しい領域にも挑戦する。"
+  ],
+  darkRoute: {
+    intro: "マスター職人が、完璧さを追求し続けると、「まだ完成していない」という感覚から、いつまでも公開や提出ができなくなることがあります。本人にとっては「まだ途中」でも、周囲からは「結局出てこない」と見えてしまうことがあります。",
+    checklist: [
+      "「もう少し直したい」が、いつまでも続いていないか",
+      "完成したものを、誰かに見せることに強い不安を感じていないか",
+      "新しいことに手を出すより、今のものを直し続けていないか"
+    ],
+    avoidance: [
+      "「ここまでで一度出す」という締め切りを決める",
+      "未完成な状態でも、信頼できる人に見せてみる",
+      "完成度よりも「届けること」に価値を置く練習をする"
+    ]
+  },
+  love: {
+    attracted: "マスター職人のこだわりやペースを尊重してくれる、落ち着いた人。",
+    pitfall: "自分の作業に没頭しすぎて、関係性への意識が薄くなってしまうこと。",
+    ideal: "マスター職人の集中する時間を理解しつつ、適度に外の世界に連れ出してくれる人。"
+  },
+  work: {
+    goodEnv: "専門性や技術を活かす仕事。職人、エンジニア、デザイナー、研究者など「一つを極める」職種。",
+    avoidEnv: "スピードと量を優先し、品質へのこだわりが評価されにくい環境。",
+    skill: "発信力。自分の仕事の価値を、適切な形で周囲に伝える力を育てる。"
+  },
+  money: "マスター職人は、専門性の高さがそのまま価値になるタイプです。一つのスキルを深めることで、長期的に安定した収入源を作ることができます。一方で、価格設定や交渉が苦手な傾向もあるため、自分の技術の価値を正しく伝える・任せられる人と組むことで、より適正な評価を受けられるようになります。",
+  compatibility: {
+    top: [
+      {code:"LG", name:"レベル上げ狂", comment:"同じ成長王国。お互いの努力するスタイルを尊重し合える"},
+      {code:"DB", name:"データ脳", comment:"知的で静かな時間を、一緒に過ごせる相性"},
+      {code:"SH", name:"心の避難所", comment:"作業に没頭するマスター職人を、優しく支えてくれる"}
+    ],
+    last: {code:"AI", name:"オールイン型", comment:"スピード感は違うが、互いの強みを認め合える"}
+  },
+  legendCondition: "LEGEND「神工鬼匠」に到達するためには、覚醒ルートの5条件をすべて満たした上で、最終条件をクリアする必要があります。最終条件：自分の作品やスキルを、世界に「届ける」ことを選べるようになること。マスター職人の真の力は「極める」ことにありますが、それが誰にも届かなければ、その価値は完成しません。届けることを選んだとき、あなたの技術は時代を超えて語られる「神工」になります。"
+},
+
+// ============================================================
+DB: {
+  shortDesc: "データ脳は、物事を冷静に分析し、データや情報から真実を見抜く知性派タイプ。感情に流されず、合理的な判断ができることが最大の強みです。分析力と成長力の高さが、複雑な問題を整理し、最適な答えを導き出す「知のスペシャリスト」としての評価につながっているはずです。",
+  awakening: [
+    "分析を「伝える」：見えたことを、わかりやすく人に伝える力を育てる。",
+    "感情のデータも扱う：数字だけでなく、人の気持ちも分析の対象に含める。",
+    "不確実性を受け入れる：すべてが分析できるわけではないと理解する。",
+    "実行に踏み出す：分析した結果を、実際の行動に変える。",
+    "チームで分析する：一人で完結させず、他者と一緒に考える経験をする。"
+  ],
+  darkRoute: {
+    intro: "データ脳が、分析することに集中しすぎると、「批評するだけで、自分は動かない」という立場になりやすくなります。本人は客観的なつもりでも、周囲からは「言うだけの人」と見られてしまうことがあります。",
+    checklist: [
+      "他人の行動や成果について、評価・分析することが多くなっていないか",
+      "自分自身は、リスクを取って動くことを避けていないか",
+      "「正確には」「実際には」という言葉が口癖になっていないか"
+    ],
+    avoidance: [
+      "分析した結果を、自分自身の行動にも適用する",
+      "完璧な分析でなくても、一度試してみる",
+      "他人の挑戦を、評価ではなく応援の視点で見る"
+    ]
+  },
+  love: {
+    attracted: "データ脳の分析や考え方に、興味を持って話を聞いてくれる人。",
+    pitfall: "関係性も分析しすぎて、自然な感情の流れを大切にできなくなること。",
+    ideal: "データ脳の理性的な部分を理解しつつ、感覚的な楽しさも教えてくれる人。"
+  },
+  work: {
+    goodEnv: "分析・研究・データサイエンスなど、情報を扱う仕事。リサーチャー、エンジニア、コンサルタントなど。",
+    avoidEnv: "感覚や勢いが優先され、データや根拠が重視されない環境。",
+    skill: "実行力。分析を「アドバイス」で終わらせず、自分自身のプロジェクトとして動かす経験を持つ。"
+  },
+  money: "データ脳は、情報を元に合理的な判断ができるため、資産運用において非常に強い適性があります。市場のデータやトレンドを読み解き、感情に左右されない投資判断ができます。一方で、「完璧な情報が揃うまで動けない」という傾向もあるため、ある程度のリスクを受け入れて行動する練習が、資産形成のスピードを上げます。",
+  compatibility: {
+    top: [
+      {code:"ST", name:"裏参謀", comment:"分析と戦略、知的好奇心で深く繋がれる"},
+      {code:"IA", name:"アイデア中毒", comment:"アイデアを、データ脳が現実的な形に整えられる"},
+      {code:"MC", name:"マスター職人", comment:"同じ成長王国。静かな時間を共有できる"}
+    ],
+    last: {code:"SR", name:"スター体質", comment:"アプローチは違うが、互いの世界を尊重し合える"}
+  },
+  legendCondition: "LEGEND「根源観測者」に到達するためには、覚醒ルートの5条件をすべて満たした上で、最終条件をクリアする必要があります。最終条件：分析の結果を、自分自身の人生で証明すること。データ脳の真の力は「理解する」ことにありますが、それを「実践する」ことで初めて本物の知見になります。自分の分析を自らの行動で裏付けられたとき、あなたの洞察は世界の根源を見通す力になります。"
+},
+
+// ============================================================
+BR: {
+  shortDesc: "猪突猛進家は、とにかく前へ進む、行動力にあふれたタイプ。考えるよりもまず動くことで、道を切り開いていきます。行動力と成長力の高さが、周囲からは「とにかくパワフルな人」という印象を与え、停滞している状況を動かす起爆剤になることが多いはずです。",
+  awakening: [
+    "立ち止まる時間を作る：突き進む前に、一度状況を確認する習慣をつける。",
+    "周りを見る：自分のペースだけでなく、一緒に進む人のペースも意識する。",
+    "失敗から学ぶ：突き進んだ結果を振り返り、次に活かす。",
+    "力の使い方を選ぶ：すべてに全力を出すのではなく、力を入れる場面を選ぶ。",
+    "誰かを引っ張る：自分が前に進むだけでなく、後ろの人を導く経験をする。"
+  ],
+  darkRoute: {
+    intro: "猪突猛進家が、立ち止まることへの苦手意識が強くなると、「考える前に突き進んでしまい、止まれない」状態になることがあります。本人は前向きでも、周囲からは「暴走している」と見えてしまうことがあります。",
+    checklist: [
+      "「とりあえずやってみる」が、計画なしで進むことが多くなっていないか",
+      "周囲が止めようとしても、聞き入れにくくなっていないか",
+      "突き進んだ後、振り返る時間を取っていないか"
+    ],
+    avoidance: [
+      "大きな行動の前には、一度誰かに相談する",
+      "「止まる」ことも、前進の一部だと考える",
+      "結果を振り返り、次に活かす時間を作る"
+    ]
+  },
+  love: {
+    attracted: "猪突猛進家のパワフルさを、一緒に楽しんでくれる人。",
+    pitfall: "勢いで関係を進めすぎて、相手のペースを置き去りにしてしまうこと。",
+    ideal: "猪突猛進家の行動力を信頼しつつ、時には「ちょっと待って」と止めてくれる人。"
+  },
+  work: {
+    goodEnv: "現場で動くことが評価される仕事。営業、施工、緊急対応、新規開拓など「動いた分だけ成果に繋がる」職種。",
+    avoidEnv: "じっくり考えることや、緻密な計画が求められる環境。",
+    skill: "計画力。動き出す前の準備を整えることで、行動の成果がさらに大きくなる。"
+  },
+  money: "猪突猛進家は、行動力をそのまま収入に変えられるタイプです。動いた分だけ成果が出る仕事との相性が良い一方、計画性が乏しいと、稼いだ分だけ使ってしまう傾向も。「行動する前に決める・行動した後に振り返る」という仕組みを持つことで、パワフルさを資産形成にも活かせます。",
+  compatibility: {
+    top: [
+      {code:"AI", name:"オールイン型", comment:"同じ行動派。一緒にいると最高に楽しい"},
+      {code:"LG", name:"レベル上げ狂", comment:"同じ成長王国。行動と継続が組み合わさり最強"},
+      {code:"KM", name:"キングメーカー", comment:"猪突猛進家の勢いを、キングメーカーが導いてくれる"}
+    ],
+    last: {code:"ST", name:"裏参謀", comment:"スタイルは正反対だが、互いに無いものを補い合える"}
+  },
+  legendCondition: "LEGEND「第一歩の英雄」に到達するためには、覚醒ルートの5条件をすべて満たした上で、最終条件をクリアする必要があります。最終条件：自分が切り開いた道の上で、後ろを振り返り、誰かが進めるようになっているか確認すること。猪突猛進家の真の力は「最初に動く」ことにあります。あなたが最初に踏み出した一歩が、誰かにとっての「道」になったとき、その勇気は英雄譜として語り継がれます。"
+}
+
+}; // END TYPE_CONTENT
+
+
+// ========== STATE ==========
+let currentQ=0, answers=[], resultData=null;
+let purchaseName='', purchaseEmail='';
+let stripeInstance=null, cardElement=null;
+
+// ★ Stripeの公開可能キー（テスト用）を設定してください
+const STRIPE_PK = 'pk_test_51xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+const ADMIN_PASSWORD = 'guild2024';
+
+// ========== SCREEN ==========
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ========== QUIZ ==========
+function startQuiz(){
+  currentQ=0; answers=[];
+  showScreen('quiz');
+  renderQuestion();
+}
+function renderQuestion(){
+  const q=DATA.questions[currentQ], total=DATA.questions.length;
+  const pct=(currentQ/total*100).toFixed(0);
+  document.getElementById('progress-fill').style.width=pct+'%';
+  document.getElementById('progress-text').textContent=(currentQ+1)+' / '+total;
+  document.getElementById('q-number').textContent='QUEST '+String(currentQ+1).padStart(2,'0');
+  document.getElementById('q-text').textContent=q.text;
+  const container=document.getElementById('options-container');
+  container.innerHTML='';
+  const saved=answers[currentQ];
+  q.options.forEach(opt=>{
+    const btn=document.createElement('button');
+    btn.className='option-btn'+(saved===opt.key?' selected':'');
+    btn.innerHTML=`<span class="option-key">${opt.key}</span><span>${opt.text}</span>`;
+    btn.onclick=()=>selectOption(opt.key);
+    container.appendChild(btn);
+  });
+  document.getElementById('btn-next').disabled=!saved;
+  document.getElementById('btn-back').style.visibility=currentQ===0?'hidden':'visible';
+  document.getElementById('btn-next').textContent=currentQ===DATA.questions.length-1?'診断する ▶':'次へ ▶';
+}
+function selectOption(key){
+  answers[currentQ]=key;
+  document.querySelectorAll('.option-btn').forEach(b=>{
+    b.classList.toggle('selected',b.querySelector('.option-key').textContent===key);
+  });
+  document.getElementById('btn-next').disabled=false;
+}
+function goNext(){
+  if(!answers[currentQ])return;
+  if(currentQ<DATA.questions.length-1){currentQ++;renderQuestion();}
+  else{showScreen('loading');setTimeout(()=>{calcResult();showResult();showScreen('result');},2200);}
+}
+function goBack(){if(currentQ>0){currentQ--;renderQuestion();}}
+
+// ========== CALC ==========
+function calcResult(){
+  const raw={domination:0,empathy:0,creation:0,action:0,growth:0,analysis:0,guardian:0};
+  const maxPossible={domination:0,empathy:0,creation:0,action:0,growth:0,analysis:0,guardian:0};
+  DATA.questions.forEach((q,qi)=>{
+    const best={};
+    q.options.forEach(o=>Object.entries(o.scores||{}).forEach(([ab,v])=>{best[ab]=Math.max(best[ab]||0,v);}));
+    Object.entries(best).forEach(([ab,v])=>{maxPossible[ab]+=v;});
+    const opt=q.options.find(o=>o.key===answers[qi]);
+    if(opt)Object.entries(opt.scores||{}).forEach(([ab,v])=>{raw[ab]=(raw[ab]||0)+v;});
+  });
+  const norm={};
+  Object.keys(raw).forEach(ab=>{norm[ab]=maxPossible[ab]>0?Math.round(raw[ab]/maxPossible[ab]*100):0;});
+  const{domination:dom,empathy:emp,creation:cre,action:act,growth:gro,analysis:ana,guardian:gua}=norm;
+  const awakening=Math.round(gro*.30+act*.25+ana*.20+emp*.15+cre*.10);
+  const love=Math.round(emp*.40+gua*.25+act*.20+cre*.15);
+  const work=Math.round(dom*.30+ana*.25+gro*.25+act*.20);
+  const legend=Math.round(awakening*.45+work*.20+love*.15+gro*.10+act*.10);
+  const rankRule=DATA.rankRules.find(r=>legend>=r.min&&legend<r.max)||DATA.rankRules[DATA.rankRules.length-1];
+  const typeScores=DATA.types.map(t=>{
+    const mainAvg=t.mainAbilities.reduce((s,ab)=>s+(norm[ab]||0),0)/t.mainAbilities.length;
+    const sub=norm[t.subAbility]||0;
+    const kgAbils=({dominion:['domination','analysis'],resonance:['empathy','guardian'],creation:['creation','action'],growth:['growth','analysis']})[t.kingdom]||['domination'];
+    const kgAvg=kgAbils.reduce((s,ab)=>s+(norm[ab]||0),0)/kgAbils.length;
+    return{type:t,score:mainAvg*.60+sub*.20+kgAvg*.20};
+  });
+  typeScores.sort((a,b)=>b.score-a.score);
+  const compat=typeScores.slice(1,4).map(ts=>ts.type);
+  resultData={norm,awakening,love,work,legend,rank:rankRule,mainType:typeScores[0].type,compat};
+  saveDiagnosis(resultData);
+}
+
+function showResult(){
+  document.getElementById('nav-top').style.display = 'flex';
+  const d=resultData, t=d.mainType, kg=DATA.kingdoms[t.kingdom];
+  const tc = TYPE_CONTENT[t.code] || null;
+
+  // ヘッダー
+  document.getElementById('r-type-code').textContent = t.code;
+  document.getElementById('r-kingdom').textContent = `── ${kg.name} ──`;
+  document.getElementById('r-type-name').textContent = t.name;
+  document.getElementById('r-beast').textContent = `守護獣：${t.beast}`;
+  document.getElementById('r-legend-job').textContent = `最終到達職業：${t.legendJob}`;
+  document.getElementById('r-dark-job').textContent = `⚠ 闇落ち職：${t.darkJob}`;
+  document.getElementById('r-rank').textContent = d.rank.rank;
+  document.getElementById('r-rank-title').textContent = d.rank.title;
+  document.getElementById('r-legend-rate').textContent = d.legend;
+  document.getElementById('r-awakening').textContent = d.awakening;
+  document.getElementById('r-love').textContent = d.love;
+  document.getElementById('r-work').textContent = d.work;
+
+  // タイプ解説（簡易説明文）
+  document.getElementById('r-type-desc').textContent = tc ? tc.shortDesc : '';
+
+  // 覚醒ルート（無料公開：条件1・2のみ）
+  const awakeEl = document.getElementById('awakening-list-free');
+  awakeEl.innerHTML = '';
+  if(tc && tc.awakening){
+    tc.awakening.slice(0,2).forEach((text,i)=>{
+      awakeEl.innerHTML += `<div class="awakening-item"><span class="awakening-num">${i+1}</span><span>${text}</span></div>`;
+    });
+  }
+
+  // 王国カラークラス
+  const header = document.querySelector('#screen-result .result-header');
+  header.className = 'result-header ' + kg.kgClass;
+  header.style.maxWidth = '600px'; header.style.width = '100%';
+
+  // アバター画像（images/img.png があれば表示、なければ fallback emoji）
+  const avatarEl = document.getElementById('r-avatar');
+  const phEl = document.getElementById('r-avatar-placeholder');
+  const imgPath = 'images/' + t.img;
+  let imgEl = avatarEl.querySelector('img');
+  if(!imgEl){
+    imgEl = document.createElement('img');
+    avatarEl.appendChild(imgEl);
+  }
+  imgEl.alt = t.name;
+  imgEl.style.display = 'none';
+  phEl.style.display = 'block';
+  phEl.textContent = t.fallback;
+  imgEl.onload = function(){
+    phEl.style.display = 'none';
+    imgEl.style.display = 'block';
+    console.log('[image] loaded:', imgPath);
+  };
+  imgEl.onerror = function(){
+    phEl.style.display = 'block';
+    imgEl.style.display = 'none';
+    console.warn('[image] failed to load:', imgPath, '(画像が見つかりません。imagesフォルダの配置とファイル名を確認してください)');
+  };
+  imgEl.src = imgPath;
+
+  // 能力値バー
+  const barsEl=document.getElementById('ability-bars');
+  barsEl.innerHTML='';
+  Object.entries(DATA.abilities).forEach(([ab,label])=>{
+    const val=d.norm[ab]||0;
+    barsEl.innerHTML+=`<div class="ability-row"><span class="ability-name">${label}</span><div class="ability-bar-bg"><div class="ability-bar-fill" data-val="${val}" style="width:0%"></div></div><span class="ability-value">${val}</span></div>`;
+  });
+
+  // 相性TOP3（編集コンテンツより）
+  const compatEl=document.getElementById('compat-list');
+  compatEl.innerHTML='';
+  const compatList = (tc && tc.compatibility && tc.compatibility.top) ? tc.compatibility.top : d.compat.map(ct=>({code:ct.code,name:ct.name,comment:DATA.kingdoms[ct.kingdom].theme}));
+  compatList.forEach((ct,i)=>{
+    compatEl.innerHTML+=`<div class="compat-item"><span class="compat-rank">${i+1}</span><span style="font-size:1.1rem;font-weight:700;color:var(--gold-dim);letter-spacing:.1em">${ct.code}</span><span class="compat-name">${ct.name}</span><span class="compat-comment">${ct.comment}</span></div>`;
+  });
+
+  // サンプルリンク文言
+  const sampleLinkEl = document.getElementById('sample-link-text');
+  if(sampleLinkEl) sampleLinkEl.textContent = `▸ あなた専用のプレビューを見る（${t.code} ${t.name} ${d.rank.rank}ランク ${d.legend}%）`;
+
+  document.getElementById('email-success-msg').classList.add('modal-hidden');
+  document.getElementById('free-email').value='';
+  document.getElementById('copy-done').style.display='none';
+  setTimeout(()=>{document.querySelectorAll('.ability-bar-fill').forEach(el=>{el.style.width=el.dataset.val+'%';});},300);
+}
+
+// ========== PDF生成（Vercel API経由）==========
+async function handleDownloadPDF(){
+  if(!resultData){ alert('診断データが見つかりません。再度診断してください。'); return; }
+  const btn = document.getElementById('btn-download-pdf');
+  btn.disabled = true;
+  btn.textContent = '⏳ 生成中...（10〜20秒かかります）';
+
+  try{
+    const t = resultData.mainType;
+    const payload = {
+      code:       t.code,
+      rank:       resultData.rank.rank,
+      legendRate: resultData.legend,
+      norm:       resultData.norm
+    };
+
+    const res = await fetch('/api/generate-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if(!res.ok){
+      const err = await res.json().catch(()=>({error:'不明なエラー'}));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+
+    // PDFをBlobとしてダウンロード
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `unmei_${t.code}_${resultData.rank.rank}_${resultData.legend}pct.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    btn.textContent = `✅ ダウンロード完了！`;
+    btn.disabled = false;
+
+  } catch(e){
+    console.error(e);
+    btn.disabled = false;
+    btn.textContent = '⚠ 再試行する';
+    alert('PDF生成中にエラーが発生しました：' + e.message);
+  }
+}
+function getShareText(){
+  if(!resultData) return '';
+  const t=resultData.mainType;
+  return `私は【${t.code} ${t.name}】でした。\nLEGEND到達率は${resultData.legend}%。\n\nあなたの運命職業は？\n#運命職業診断 #人生攻略ギルド`;
+}
+function shareTwitter(){
+  const text = encodeURIComponent(getShareText());
+  window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+}
+function shareThreads(){
+  const text = encodeURIComponent(getShareText());
+  window.open(`https://www.threads.net/intent/post?text=${text}`, '_blank');
+}
+function shareInstagram(){
+  // InstagramはURLスキームでの直接投稿が不可のため、テキストをコピーしてアプリへ誘導
+  const text = getShareText();
+  navigator.clipboard.writeText(text).then(()=>{
+    alert('📷 テキストをコピーしました！\n\nInstagramアプリを開いて、ストーリーズまたは投稿に貼り付けてください。');
+  }).catch(()=>{ alert(text); });
+}
+function copyShareText(){
+  const text = getShareText();
+  navigator.clipboard.writeText(text).then(()=>{
+    const el = document.getElementById('copy-done');
+    el.style.display = 'block';
+    setTimeout(()=>{ el.style.display='none'; }, 2500);
+  }).catch(()=>{ alert(text); });
+}
+
+// ========== EMAIL REGISTER ==========
+function registerEmail(){
+  const email=document.getElementById('free-email').value.trim();
+  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){alert('正しいメールアドレスを入力してください');return;}
+  const typeName=resultData?resultData.mainType.name:'不明';
+  const record={date:new Date().toLocaleString('ja-JP'),email,type:typeName,source:'無料登録'};
+  const list=JSON.parse(localStorage.getItem('guild_emails')||'[]');
+  list.push(record);
+  localStorage.setItem('guild_emails',JSON.stringify(list));
+  document.getElementById('email-success-msg').classList.remove('modal-hidden');
+  document.getElementById('free-email').disabled=true;
+  document.querySelector('.btn-email-register').disabled=true;
+}
+
+// ========== PAYMENT ==========
+function openPaymentModal(){
+  if(!resultData){alert('診断を完了してください');return;}
+  document.getElementById('p-type').value=resultData.mainType.name;
+  document.getElementById('p-rank').value=`ランク ${resultData.rank.rank}（${resultData.rank.title}）/ LEGEND到達率 ${resultData.legend}%`;
+  document.getElementById('p-name').value='';
+  document.getElementById('p-email').value='';
+  document.getElementById('payment-step-1').classList.remove('modal-hidden');
+  document.getElementById('payment-step-2').classList.add('modal-hidden');
+  document.getElementById('payment-modal').classList.remove('modal-hidden');
+}
+function closePaymentModal(){document.getElementById('payment-modal').classList.add('modal-hidden');}
+
+function goToPayment(){
+  const name=document.getElementById('p-name').value.trim();
+  const email=document.getElementById('p-email').value.trim();
+  if(!name||!email){alert('お名前とメールアドレスを入力してください');return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){alert('正しいメールアドレスを入力してください');return;}
+  purchaseName=name; purchaseEmail=email;
+  document.getElementById('p2-name').textContent=name;
+  document.getElementById('p2-email').textContent=email;
+  document.getElementById('payment-step-1').classList.add('modal-hidden');
+  document.getElementById('payment-step-2').classList.remove('modal-hidden');
+  initStripe();
+}
+function backToStep1(){
+  document.getElementById('payment-step-2').classList.add('modal-hidden');
+  document.getElementById('payment-step-1').classList.remove('modal-hidden');
+}
+
+function initStripe(){
+  if(!stripeInstance){
+    try{
+      stripeInstance=Stripe(STRIPE_PK);
+      const elements=stripeInstance.elements({locale:'ja'});
+      cardElement=elements.create('card',{
+        style:{base:{color:'#E8E0D0',fontSize:'16px',fontFamily:'Noto Sans JP, sans-serif','::placeholder':{color:'#8A8070'}},invalid:{color:'#C0392B'}},
+        hidePostalCode:true
+      });
+      cardElement.mount('#card-element');
+      cardElement.on('change',e=>{document.getElementById('card-errors').textContent=e.error?e.error.message:'';});
+    }catch(e){
+      document.getElementById('card-element').innerHTML='<p style="color:var(--text-muted);font-size:.82rem">⚠ Stripeの公開キーを設定してください（STRIPE_PK変数）</p>';
+    }
+  }
+}
+
+async function processPayment(){
+  const btn=document.getElementById('btn-pay');
+  btn.disabled=true; btn.textContent='処理中...';
+  // ★ 本番では stripe.createPaymentMethod → サーバーへ送信してPaymentIntent確認が必要
+  // テストモードのデモ処理
+  try{
+    if(!stripeInstance||!cardElement)throw new Error('Stripe未初期化');
+    const{paymentMethod,error}=await stripeInstance.createPaymentMethod({type:'card',card:cardElement,billing_details:{name:purchaseName,email:purchaseEmail}});
+    if(error){document.getElementById('card-errors').textContent=error.message;btn.disabled=false;btn.textContent='¥1,980 で購入する 🔒';return;}
+    // デモ：実際はここでサーバーに paymentMethod.id を送り PaymentIntent を確認する
+    savePurchase();
+    closePaymentModal();
+    document.getElementById('success-msg').innerHTML=`ご購入ありがとうございます。<br>「<strong style="color:var(--gold)">${purchaseEmail}</strong>」に確認メールをお送りしました。<br><br>担当者が個別PDFを作成後、<strong style="color:var(--gold)">48時間以内</strong>にお届けします。`;
+    showScreen('success');
+  }catch(e){
+    // Stripe未設定時はデモ完了として動作
+    savePurchase();
+    closePaymentModal();
+    document.getElementById('success-msg').innerHTML=`お申し込みを受け付けました。<br>「<strong style="color:var(--gold)">${purchaseEmail}</strong>」宛に担当者よりご連絡します。<br><br><strong style="color:var(--gold)">48時間以内</strong>にPDFをお届けします。`;
+    showScreen('success');
+  }
+}
+
+function savePurchase(){
+  if(!resultData)return;
+  const record={
+    date:new Date().toLocaleString('ja-JP'),
+    name:purchaseName, email:purchaseEmail,
+    type:resultData.mainType.name,
+    rank:resultData.rank.rank,
+    legend:resultData.legend,
+    abilities:Object.entries(DATA.abilities).map(([ab,label])=>`${label}:${resultData.norm[ab]||0}`).join(' / ')
+  };
+  const list=JSON.parse(localStorage.getItem('guild_buyers')||'[]');
+  list.push(record);
+  localStorage.setItem('guild_buyers',JSON.stringify(list));
+  // メールも登録
+  const emails=JSON.parse(localStorage.getItem('guild_emails')||'[]');
+  if(!emails.find(e=>e.email===purchaseEmail)){
+    emails.push({date:new Date().toLocaleString('ja-JP'),email:purchaseEmail,type:resultData.mainType.name,source:'購入'});
+    localStorage.setItem('guild_emails',JSON.stringify(emails));
+  }
+}
+
+function saveDiagnosis(d){
+  const record={date:new Date().toLocaleString('ja-JP'),type:d.mainType.name,kingdom:DATA.kingdoms[d.mainType.kingdom].name,rank:d.rank.rank,legend:d.legend,awakening:d.awakening};
+  const list=JSON.parse(localStorage.getItem('guild_diagnoses')||'[]');
+  list.push(record);
+  localStorage.setItem('guild_diagnoses',JSON.stringify(list));
+}
+
+// サンプルから戻る：診断済みなら結果ページ、未診断ならトップ
+function goBackFromSample(){
+  showScreen(resultData ? 'result' : 'top');
+}
+
+// ========== SAMPLE PDF（プレビュー）==========
+function viewSample(){
+  populateSamplePage();
+  showScreen('sample');
+}
+
+function populateSamplePage(){
+  // 診断済みならその結果、未診断ならFXのデフォルトサンプルを表示
+  let t, d, tc, norm;
+  if(resultData){
+    d = resultData;
+    t = d.mainType;
+    tc = TYPE_CONTENT[t.code];
+    norm = d.norm;
+  }else{
+    t = DATA.types.find(x=>x.code==='FX');
+    tc = TYPE_CONTENT['FX'];
+    norm = {domination:92, analysis:88, action:81, empathy:73, growth:68, creation:62, guardian:55};
+    d = { rank:{rank:'A', title:'英雄候補'}, legend:88 };
+  }
+  const kg = DATA.kingdoms[t.kingdom];
+
+  document.getElementById('sample-header-label').textContent =
+    `◆ ${resultData ? 'あなた専用のプレビュー' : 'サンプル閲覧'} — ${t.code} ${t.name} / ${d.rank.rank}ランク / ${d.legend}%`;
+
+  // カバー
+  document.getElementById('pdf-avatar').textContent = t.fallback || '⚔';
+  document.getElementById('pdf-type-name').textContent = t.name;
+  document.getElementById('pdf-legend-line').textContent = `LEGEND職：${t.legendJob} ／ 闇落ち職：${t.darkJob}`;
+  document.getElementById('pdf-kingdom-line').textContent = `所属王国：${kg.name}「${kg.theme}」`;
+  document.getElementById('pdf-rank').textContent = d.rank.rank;
+  document.getElementById('pdf-legend-rate').textContent = d.legend + '%';
+  document.getElementById('pdf-rank-title').textContent = d.rank.title;
+
+  // 能力値
+  const pdfBars = document.getElementById('pdf-ability-bars');
+  pdfBars.innerHTML = '';
+  Object.entries(DATA.abilities).forEach(([ab,label])=>{
+    const val = norm[ab] || 0;
+    pdfBars.innerHTML += `<div class="pdf-ability-row"><span class="pdf-ability-name">${label}</span><div class="pdf-ability-bar-bg"><div class="pdf-ability-bar-fill" style="width:${val}%"></div></div><span class="pdf-ability-val">${val}</span></div>`;
+  });
+
+  if(!tc) return;
+
+  // タイプ解説
+  document.getElementById('pdf-type-desc').textContent = tc.shortDesc;
+
+  // 覚醒ルート（無料：条件1,2）
+  const awakeFreeEl = document.getElementById('pdf-awakening-free');
+  awakeFreeEl.innerHTML = tc.awakening.slice(0,2).map((txt,i)=>`✓ 条件${i+1}：${txt}`).join('<br>');
+  document.getElementById('pdf-awakening-intro').textContent = `${t.name}がLEGEND「${t.legendJob}」に覚醒するための第一条件：`;
+
+  // 闇落ちルート（ぼかし）
+  document.getElementById('pdf-dark-text').textContent = tc.darkRoute.intro;
+
+  // 恋愛攻略（ぼかし）
+  document.getElementById('pdf-love-text').textContent =
+    `${t.name}型の恋愛パターン：${tc.love.attracted} ただし、${tc.love.pitfall} 理想のパートナーは、${tc.love.ideal}`;
+
+  // 仕事・お金（ぼかし）
+  document.getElementById('pdf-work-text').textContent =
+    `${t.name}型が最も輝く環境：${tc.work.goodEnv} 避けたい環境：${tc.work.avoidEnv} お金の攻略：${tc.money}`;
+}
+
+</script>
+</body>
+</html>

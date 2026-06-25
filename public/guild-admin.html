@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理画面 — 人生攻略ギルド診断</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#C9A84C;--gold-light:#F0D080;--gold-dim:#7A6230;
+  --dark:#0A0A0F;--dark2:#12121A;--dark3:#1A1A26;--dark4:#242435;
+  --border:rgba(201,168,76,0.25);--border-bright:rgba(201,168,76,0.6);
+  --text:#E8E0D0;--text-muted:#8A8070;
+  --success:#1D9E75;--danger:#C0392B;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--dark);color:var(--text);font-family:'Noto Sans JP',sans-serif;min-height:100vh}
+#stars{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 20% 50%,#1a1040 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,#0a1a2e 0%,transparent 50%),var(--dark)}
+
+/* LOGIN */
+.login-wrap{position:relative;z-index:1;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+.login-box{background:var(--dark2);border:1px solid var(--border);border-top:2px solid var(--gold);padding:2.5rem;max-width:400px;width:100%}
+.login-title{font-family:'Noto Serif JP',serif;font-size:1.3rem;font-weight:700;color:var(--gold);margin-bottom:.4rem}
+.login-sub{font-size:.78rem;color:var(--text-muted);margin-bottom:1.5rem;letter-spacing:.05em}
+.form-group{margin-bottom:1rem}
+.form-label{display:block;font-size:.8rem;color:var(--text-muted);margin-bottom:.4rem;letter-spacing:.05em}
+.form-input{width:100%;background:var(--dark4);border:1px solid var(--border);color:var(--text);padding:.7rem 1rem;font-family:'Noto Sans JP',sans-serif;font-size:.9rem;outline:none;transition:border-color .2s}
+.form-input:focus{border-color:var(--gold)}
+.btn-login{display:block;width:100%;background:linear-gradient(135deg,var(--gold-dim),var(--gold));color:var(--dark);border:none;padding:.9rem;font-family:'Noto Serif JP',serif;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:.1em;transition:all .2s;margin-top:1.2rem}
+.btn-login:hover{box-shadow:0 6px 20px rgba(201,168,76,.3)}
+.login-err{font-size:.8rem;color:var(--danger);margin-top:.5rem;min-height:1.2rem}
+
+/* ADMIN LAYOUT */
+.admin-wrap{position:relative;z-index:1;display:none;min-height:100vh;flex-direction:column}
+.admin-topbar{background:var(--dark2);border-bottom:1px solid var(--border);padding:.8rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.admin-logo{font-family:'Noto Serif JP',serif;font-size:1rem;font-weight:700;color:var(--gold);letter-spacing:.05em}
+.admin-logo span{font-size:.75rem;color:var(--text-muted);font-family:'Noto Sans JP',sans-serif;margin-left:.5rem}
+.topbar-actions{display:flex;align-items:center;gap:.8rem}
+.btn-sm{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:.35rem .8rem;font-size:.75rem;cursor:pointer;transition:all .2s}
+.btn-sm:hover{border-color:var(--gold-dim);color:var(--text)}
+.btn-sm.danger{border-color:rgba(192,57,43,.4);color:var(--danger)}
+.btn-sm.danger:hover{background:rgba(192,57,43,.1)}
+
+.admin-body{padding:1.5rem;max-width:960px;margin:0 auto;width:100%}
+
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem}
+.stat-card{background:var(--dark2);border:1px solid var(--border);border-top:2px solid var(--gold-dim);padding:1.2rem;text-align:center}
+.stat-label{font-size:.7rem;color:var(--text-muted);letter-spacing:.15em;margin-bottom:.4rem}
+.stat-val{font-family:'Noto Serif JP',serif;font-size:2.2rem;font-weight:900;color:var(--gold);line-height:1}
+.stat-sub{font-size:.7rem;color:var(--text-muted);margin-top:.3rem}
+
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:1.5rem}
+.tab-btn{padding:.65rem 1.3rem;font-size:.82rem;color:var(--text-muted);cursor:pointer;border:none;border-bottom:2px solid transparent;background:none;transition:all .2s;font-family:'Noto Sans JP',sans-serif}
+.tab-btn.active{color:var(--gold);border-bottom-color:var(--gold)}
+.tab-btn:hover:not(.active){color:var(--text)}
+
+.panel{display:none}
+.panel.active{display:block}
+
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.section-title{font-size:.72rem;letter-spacing:.2em;color:var(--gold-dim)}
+.record-count{font-size:.75rem;color:var(--text-muted)}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:.82rem;min-width:500px}
+th{background:var(--dark3);color:var(--gold-dim);padding:.65rem .9rem;text-align:left;font-weight:500;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:.65rem .9rem;border-bottom:1px solid rgba(201,168,76,.1);color:var(--text-muted);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(201,168,76,.03)}
+.empty{text-align:center;padding:3rem;color:var(--text-muted);font-size:.88rem;background:var(--dark2)}
+
+.badge{display:inline-block;padding:.2rem .6rem;font-size:.7rem;font-weight:700;line-height:1.4}
+.badge-rank{background:rgba(201,168,76,.12);color:var(--gold);border:1px solid var(--gold-dim)}
+.badge-purchase{background:rgba(29,158,117,.12);color:var(--success);border:1px solid rgba(29,158,117,.3)}
+.badge-free{background:rgba(41,128,185,.12);color:#5dade2;border:1px solid rgba(41,128,185,.3)}
+
+.abilities-cell{font-size:.72rem;color:var(--text-muted);line-height:1.6;max-width:200px;word-break:break-all}
+
+.export-btn{background:var(--dark3);border:1px solid var(--border);color:var(--text-muted);padding:.4rem .9rem;font-size:.75rem;cursor:pointer;transition:all .2s}
+.export-btn:hover{border-color:var(--gold-dim);color:var(--gold)}
+
+@media(max-width:600px){
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .admin-body{padding:1rem}
+  .admin-topbar{padding:.7rem 1rem}
+}
+</style>
+</head>
+<body>
+<div id="stars"></div>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-box">
+    <p class="login-title">⚙ 管理画面</p>
+    <p class="login-sub">人生攻略ギルド診断 — 運営者専用</p>
+    <div class="form-group">
+      <label class="form-label">パスワード</label>
+      <input type="password" class="form-input" id="admin-pw" placeholder="管理パスワードを入力" onkeydown="if(event.key==='Enter')login()">
+    </div>
+    <button class="btn-login" onclick="login()">ログイン</button>
+    <p class="login-err" id="login-err"></p>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div class="admin-wrap" id="admin-wrap">
+  <div class="admin-topbar">
+    <div>
+      <span class="admin-logo">⚙ 管理画面<span>人生攻略ギルド診断</span></span>
+    </div>
+    <div class="topbar-actions">
+      <button class="export-btn" onclick="exportCSV()">📥 CSV出力</button>
+      <button class="btn-sm" onclick="window.open('guild-shindan.html','_blank')">← 診断サイト</button>
+      <button class="btn-sm danger" onclick="confirmClear()">🗑 全削除</button>
+      <button class="btn-sm" onclick="logout()">ログアウト</button>
+    </div>
+  </div>
+
+  <div class="admin-body">
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <p class="stat-label">購入者数</p>
+        <p class="stat-val" id="stat-buyers">0</p>
+        <p class="stat-sub">累計売上: <span id="stat-revenue">¥0</span></p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">メール登録数</p>
+        <p class="stat-val" id="stat-emails">0</p>
+        <p class="stat-sub">（購入者含む）</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">診断回数</p>
+        <p class="stat-val" id="stat-diagnoses">0</p>
+        <p class="stat-sub">購入転換率: <span id="stat-cvr">0%</span></p>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('panel-buyers',this)">購入者一覧</button>
+      <button class="tab-btn" onclick="switchTab('panel-emails',this)">メール一覧</button>
+      <button class="tab-btn" onclick="switchTab('panel-diagnoses',this)">診断結果一覧</button>
+    </div>
+
+    <!-- 購入者 -->
+    <div id="panel-buyers" class="panel active">
+      <div class="section-head">
+        <p class="section-title">◆ BUYERS</p>
+        <p class="record-count" id="buyers-count">0件</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>日時</th><th>お名前</th><th>メール</th><th>タイプ</th><th>ランク</th><th>LEGEND率</th></tr></thead>
+          <tbody id="buyers-tbody"></tbody>
+        </table>
+        <div class="empty" id="buyers-empty">まだ購入者はいません</div>
+      </div>
+    </div>
+
+    <!-- メール -->
+    <div id="panel-emails" class="panel">
+      <div class="section-head">
+        <p class="section-title">◆ EMAIL LIST</p>
+        <p class="record-count" id="emails-count">0件</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>日時</th><th>メールアドレス</th><th>診断タイプ</th><th>登録元</th></tr></thead>
+          <tbody id="emails-tbody"></tbody>
+        </table>
+        <div class="empty" id="emails-empty">まだ登録者はいません</div>
+      </div>
+    </div>
+
+    <!-- 診断 -->
+    <div id="panel-diagnoses" class="panel">
+      <div class="section-head">
+        <p class="section-title">◆ DIAGNOSES</p>
+        <p class="record-count" id="diagnoses-count">0件</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>日時</th><th>タイプ</th><th>王国</th><th>ランク</th><th>LEGEND率</th><th>覚醒率</th></tr></thead>
+          <tbody id="diagnoses-tbody"></tbody>
+        </table>
+        <div class="empty" id="diagnoses-empty">まだ診断データはありません</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const ADMIN_PASSWORD = 'guild2024';
+
+function login(){
+  const pw = document.getElementById('admin-pw').value;
+  if(pw === ADMIN_PASSWORD){
+    document.getElementById('login-wrap').style.display = 'none';
+    document.getElementById('admin-wrap').style.display = 'flex';
+    loadData();
+  } else {
+    document.getElementById('login-err').textContent = 'パスワードが違います';
+    document.getElementById('admin-pw').value = '';
+  }
+}
+
+function logout(){
+  document.getElementById('admin-wrap').style.display = 'none';
+  document.getElementById('login-wrap').style.display = 'flex';
+  document.getElementById('admin-pw').value = '';
+}
+
+function loadData(){
+  const buyers    = JSON.parse(localStorage.getItem('guild_buyers')    || '[]');
+  const emails    = JSON.parse(localStorage.getItem('guild_emails')    || '[]');
+  const diagnoses = JSON.parse(localStorage.getItem('guild_diagnoses') || '[]');
+
+  // Stats
+  document.getElementById('stat-buyers').textContent    = buyers.length;
+  document.getElementById('stat-emails').textContent    = emails.length;
+  document.getElementById('stat-diagnoses').textContent = diagnoses.length;
+  document.getElementById('stat-revenue').textContent   = '¥' + (buyers.length * 980).toLocaleString();
+  const cvr = diagnoses.length > 0 ? Math.round(buyers.length / diagnoses.length * 100) : 0;
+  document.getElementById('stat-cvr').textContent = cvr + '%';
+
+  // 購入者
+  const bTbody = document.getElementById('buyers-tbody');
+  bTbody.innerHTML = '';
+  document.getElementById('buyers-count').textContent = buyers.length + '件';
+  document.getElementById('buyers-empty').style.display = buyers.length ? 'none' : 'block';
+  buyers.slice().reverse().forEach(r => {
+    bTbody.innerHTML += `<tr>
+      <td style="white-space:nowrap">${r.date}</td>
+      <td>${esc(r.name)}</td>
+      <td><a href="mailto:${esc(r.email)}" style="color:var(--gold);text-decoration:none">${esc(r.email)}</a></td>
+      <td>${esc(r.type)}</td>
+      <td><span class="badge badge-rank">${r.rank}</span></td>
+      <td>${r.legend}%</td>
+    </tr>`;
+  });
+
+  // メール
+  const eTbody = document.getElementById('emails-tbody');
+  eTbody.innerHTML = '';
+  document.getElementById('emails-count').textContent = emails.length + '件';
+  document.getElementById('emails-empty').style.display = emails.length ? 'none' : 'block';
+  emails.slice().reverse().forEach(r => {
+    const cls = r.source === '購入' ? 'badge-purchase' : 'badge-free';
+    eTbody.innerHTML += `<tr>
+      <td style="white-space:nowrap">${r.date}</td>
+      <td><a href="mailto:${esc(r.email)}" style="color:var(--gold);text-decoration:none">${esc(r.email)}</a></td>
+      <td>${esc(r.type)}</td>
+      <td><span class="badge ${cls}">${esc(r.source)}</span></td>
+    </tr>`;
+  });
+
+  // 診断
+  const dTbody = document.getElementById('diagnoses-tbody');
+  dTbody.innerHTML = '';
+  document.getElementById('diagnoses-count').textContent = diagnoses.length + '件';
+  document.getElementById('diagnoses-empty').style.display = diagnoses.length ? 'none' : 'block';
+  diagnoses.slice().reverse().forEach(r => {
+    dTbody.innerHTML += `<tr>
+      <td style="white-space:nowrap">${r.date}</td>
+      <td>${esc(r.type)}</td>
+      <td>${esc(r.kingdom)}</td>
+      <td><span class="badge badge-rank">${r.rank}</span></td>
+      <td>${r.legend}%</td>
+      <td>${r.awakening}</td>
+    </tr>`;
+  });
+}
+
+function switchTab(id, btn){
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function confirmClear(){
+  if(confirm('⚠ 全データを削除しますか？\nこの操作は元に戻せません。')){
+    localStorage.removeItem('guild_buyers');
+    localStorage.removeItem('guild_emails');
+    localStorage.removeItem('guild_diagnoses');
+    loadData();
+    alert('削除しました。');
+  }
+}
+
+function exportCSV(){
+  const buyers    = JSON.parse(localStorage.getItem('guild_buyers')    || '[]');
+  const emails    = JSON.parse(localStorage.getItem('guild_emails')    || '[]');
+  const diagnoses = JSON.parse(localStorage.getItem('guild_diagnoses') || '[]');
+
+  let csv = '\uFEFF'; // BOM for Excel
+
+  csv += '== 購入者一覧 ==\n';
+  csv += '日時,お名前,メール,タイプ,ランク,LEGEND率\n';
+  buyers.forEach(r => csv += `"${r.date}","${r.name}","${r.email}","${r.type}","${r.rank}","${r.legend}%"\n`);
+
+  csv += '\n== メール一覧 ==\n';
+  csv += '日時,メール,タイプ,登録元\n';
+  emails.forEach(r => csv += `"${r.date}","${r.email}","${r.type}","${r.source}"\n`);
+
+  csv += '\n== 診断結果一覧 ==\n';
+  csv += '日時,タイプ,王国,ランク,LEGEND率,覚醒率\n';
+  diagnoses.forEach(r => csv += `"${r.date}","${r.type}","${r.kingdom}","${r.rank}","${r.legend}%","${r.awakening}"\n`);
+
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'guild_data_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

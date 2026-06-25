@@ -1,6 +1,15 @@
 {
-  "rewrites": [
-    { "source": "/api/generate-pdf", "destination": "/api/generate-pdf.py" },
-    { "source": "/(.*)", "destination": "/public/$1" }
+  "version": 2,
+  "builds": [
+    { "src": "api/generate-pdf.py", "use": "@vercel/python" },
+    { "src": "public/**/*", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/generate-pdf", "dest": "/api/generate-pdf.py" },
+    { "src": "/", "dest": "/public/guild-shindan.html" },
+    { "src": "/guild-admin.html", "dest": "/public/guild-admin.html" },
+    { "src": "/images/(.*)", "dest": "/public/images/$1" },
+    { "src": "/(.*\\.html)", "dest": "/public/$1" },
+    { "src": "/(.*)", "dest": "/public/$1" }
   ]
 }

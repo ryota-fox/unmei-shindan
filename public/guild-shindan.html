@@ -1415,6 +1415,7 @@ function showScreen(id){
 // ========== QUIZ ==========
 function startQuiz(){
   currentQ=0; answers=[];
+  trackEvent('quiz_start');
   showScreen('quiz');
   renderQuestion();
 }
@@ -1449,7 +1450,11 @@ function selectOption(key){
 function goNext(){
   if(!answers[currentQ])return;
   if(currentQ<DATA.questions.length-1){currentQ++;renderQuestion();}
-  else{showScreen('loading');setTimeout(()=>{calcResult();showResult();showScreen('result');},2200);}
+  else{
+    trackEvent('quiz_complete');
+    showScreen('loading');
+    setTimeout(()=>{calcResult();showResult();showScreen('result');},2200);
+  }
 }
 function goBack(){if(currentQ>0){currentQ--;renderQuestion();}}
 
@@ -1572,6 +1577,19 @@ function showResult(){
   setTimeout(()=>{document.querySelectorAll('.ability-bar-fill').forEach(el=>{el.style.width=el.dataset.val+'%';});},300);
 }
 
+// ========== 計測 ==========
+function trackEvent(event){
+  const stats = JSON.parse(localStorage.getItem('guild_stats')||'{}');
+  stats[event] = (stats[event]||0) + 1;
+  // 日別集計も記録
+  const today = new Date().toLocaleDateString('ja-JP');
+  const daily = JSON.parse(localStorage.getItem('guild_daily')||'{}');
+  if(!daily[today]) daily[today] = {};
+  daily[today][event] = (daily[today][event]||0) + 1;
+  localStorage.setItem('guild_stats', JSON.stringify(stats));
+  localStorage.setItem('guild_daily', JSON.stringify(daily));
+}
+
 // ========== PDF生成（Vercel API経由）==========
 async function handleDownloadPDF(){
   if(!resultData){ alert('診断データが見つかりません。再度診断してください。'); return; }
@@ -1666,6 +1684,7 @@ function registerEmail(){
 // ========== PAYMENT ==========
 function openPaymentModal(){
   if(!resultData){alert('診断を完了してください');return;}
+  trackEvent('payment_page_reach');
   document.getElementById('p-type').value=resultData.mainType.name;
   document.getElementById('p-rank').value=`ランク ${resultData.rank.rank}（${resultData.rank.title}）/ LEGEND到達率 ${resultData.legend}%`;
   document.getElementById('p-name').value='';
@@ -1735,6 +1754,7 @@ async function processPayment(){
 
 function savePurchase(){
   if(!resultData)return;
+  trackEvent('purchase_complete');
   const record={
     date:new Date().toLocaleString('ja-JP'),
     name:purchaseName, email:purchaseEmail,

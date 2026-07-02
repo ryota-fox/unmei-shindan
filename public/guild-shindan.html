@@ -1529,7 +1529,7 @@ function showResult(){
   // アバター画像（images/img.png があれば表示、なければ fallback emoji）
   const avatarEl = document.getElementById('r-avatar');
   const phEl = document.getElementById('r-avatar-placeholder');
-  const imgPath = 'images/' + t.img;
+  const imgPath = '/images/' + t.img;
   let imgEl = avatarEl.querySelector('img');
   if(!imgEl){
     imgEl = document.createElement('img');
